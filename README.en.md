@@ -2,6 +2,8 @@
 
 [Version française](./README.md)
 
+**➜ [Open the app](https://sebplace.github.io/carnet-du-joueur/)** · installable on a phone, then works offline.
+
 Player's Notebook is a private offline notebook for recording, organising and cross-checking your player-side information in Blood on the Clocktower.
 
 > Unofficial fan-made project: Player's Notebook is not affiliated with, endorsed by, or approved by The Pandemonium Institute, and it does not replace the Storyteller or the official rules.

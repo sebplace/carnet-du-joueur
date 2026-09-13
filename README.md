@@ -2,6 +2,8 @@
 
 [English version](./README.en.md)
 
+**➜ [Ouvrir l'application](https://sebplace.github.io/carnet-du-joueur/)** · installable sur téléphone, fonctionne ensuite hors ligne.
+
 Carnet du Joueur est un carnet privé hors ligne pour noter, organiser et recouper tes informations de joueur dans Blood on the Clocktower.
 
 > Projet de fan non officiel : Carnet du Joueur n’est pas affilié à The Pandemonium Institute, n’est pas approuvé par eux, et ne remplace ni le Conteur ni les règles officielles.
