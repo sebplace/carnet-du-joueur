@@ -35,11 +35,9 @@ async(page)=>{
     let g=await state();
     check(g.claims[0].roleIds.length===3&&g.claims[0].weight===5,'multi-claim and weight persisted');
     check(g.scenarios[0].domains[g.players[1].id].includes('imp'),'claim does not exclude outside roles');
-    await p.locator('main [data-action=estimate]').first().click();
-    if(await p.locator('#confirm-action').count())await p.locator('#confirm-action').click();
     await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
     check((await p.locator('#estimates-summary').innerText()).includes('Empoisonneur'),'minion presence summarized');
-    await p.locator('[data-action=player-probability]').nth(1).click();
+    await p.locator('.player-open').nth(1).click();await p.locator('#dialog details:has(> summary + [data-player-estimate]) > summary').first().click();
     await p.locator('[data-player-estimate] .probability-rows').waitFor();
     const initial=await p.locator('[data-player-estimate]').innerText();
     check(initial.includes('83,3')&&initial.includes('16,7'),'weighted group yields 5/6 and outside 1/6');
@@ -51,7 +49,7 @@ async(page)=>{
     await choose('weight','1');
     await p.locator('#claim-form button[type=submit]').click();
     await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
-    await p.locator('[data-action=player-probability]').nth(1).click();
+    await p.locator('.player-open').nth(1).click();await p.locator('#dialog details:has(> summary + [data-player-estimate]) > summary').first().click();
     check((await p.locator('[data-player-estimate]').innerText()).includes('50 %'),'editing weight automatically refreshes estimates');
     await p.locator('#dialog [data-action=close]').click();
     await p.locator('[data-action=round]').click();
@@ -116,6 +114,9 @@ async(page)=>{
     return {checks:checks.length,passed:checks,errors};
   }finally{await context.close();}
 }
+
+
+
 
 
 

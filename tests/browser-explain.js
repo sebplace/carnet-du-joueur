@@ -43,7 +43,7 @@ async (page) => {
     await p.locator('#dialog .dialog-head [data-action=close]').click();
 
     // Per-player explanation, reached from the seat.
-    await p.locator('.player-card [data-action=player-probability]').nth(1).click();
+    await p.locator('.player-open').nth(1).click();await p.locator('#dialog details:has(> summary + [data-player-estimate]) > summary').first().click();
     await p.locator('[data-player-estimate] .probability-rows').waitFor();
     check(await p.locator('[data-player-estimate] [data-action=explain]').count()===3,'each claimed character can be explained');
     await p.locator('[data-player-estimate] [data-action=explain]').first().click();
@@ -67,8 +67,8 @@ async (page) => {
     },g.players[1].id);
     await p.reload();await p.locator('.player-card').first().waitFor();
     await p.locator('#estimates-summary').filter({hasText:'ne vont pas ensemble'}).waitFor({timeout:30000});
-    await p.locator('.player-card [data-action=player-probability]').nth(1).click();
-    await p.locator('[data-player-estimate] [data-action=estimate]').waitFor();
+    await p.locator('.player-open').nth(1).click();await p.locator('#dialog details:has(> summary + [data-player-estimate]) > summary').first().click();
+    await p.locator('[data-player-estimate]').waitFor();
     check((await p.locator('[data-player-estimate]').innerText()).includes('ne vont pas ensemble'),'a contradiction is stated instead of a number');
     await p.locator('#dialog .dialog-head [data-action=close]').click();
 
@@ -76,5 +76,9 @@ async (page) => {
     return {checks:checks.length,passed:checks,errors};
   }finally{await c.close();}
 }
+
+
+
+
 
 

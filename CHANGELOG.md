@@ -2,6 +2,18 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 1.7.0
+
+### Lisibilite de la situation a l'instant T
+- Les cartes joueur deviennent des lignes denses : numero de siege, nom, role declare et etat sur une seule ligne. Sept joueurs tiennent desormais a l'ecran la ou trois etaient visibles.
+- Les actions passent de quatre boutons texte a trois pictogrammes, accompagnes d'une legende permanente qui dit ce que chacun fait.
+- La confiance accordee a un joueur s'affiche par un ruban texture a gauche de la ligne, distinguable sans percevoir les couleurs.
+
+### Navigation et clarte
+- La navigation basse est renommee pour dire ce qu'on y trouve : Joueurs, Tableau, Journal, Roles.
+- Le menu Outils explique chaque entree en une phrase au lieu de n'afficher qu'un nom.
+- Points d'entree rationalises : chaque action n'a plus qu'un domicile, sauf lorsque deux contextes differents le justifient. Les limites du carnet etaient atteignables depuis quatre endroits, le rafraichissement depuis cinq.
+- Le bouton de masquage de l'ecran est de retour dans l'en-tete, en plus de celui de la zone du pouce.
 ## 1.5.0
 
 ### Sécurité des données et sauvegardes
@@ -112,3 +124,4 @@ All notable changes to Carnet du Joueur are recorded here.
 - Added local game setup, player notes, claims, events, clues and hypotheses.
 - Added bounded strict hypothesis solver for initial role assignments.
 - Added offline/PWA support and a fictional demo game.
+

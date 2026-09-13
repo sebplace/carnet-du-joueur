@@ -65,9 +65,11 @@ async(page)=>{
     check(!estimates.includes('effectif efficace')&&!estimates.includes('ESS'),'statistical jargon is no longer front and centre');
     check((await p.locator('#board-root').innerText()).includes('%'),'matrix surfaces the model result per seat');
 
-    await p.locator('main [data-action=coverage]').first().click();
+    await view('table');
+    await viaMenu('coverage');
     check((await p.locator('#dialog').innerText()).includes('Ce n’est pas une simulation du jeu'),'les limites restent annoncees honnetement');
     await p.locator('#dialog [data-action=close]').click();
+    await view('overview');
 
     // Privacy must work while a dialog is open, without losing typed input.
     await view('table');
@@ -126,6 +128,7 @@ async(page)=>{
     return {checks:checks.length,passed:checks,errors,selectedId};
   }finally{await c.close();}
 }
+
 
 
 

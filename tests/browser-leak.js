@@ -96,8 +96,6 @@ async (page) => {
     await scan('reglages');
     await openAndScan('#dialog [data-action=backup]','copies de secours');
     await p.locator('#settings').click();
-    await openAndScan('#dialog [data-action=coverage]','coverage depuis reglages');
-    await p.locator('#settings').click();
     await openAndScan('#dialog [data-action=restore]','restauration');
     await closeDialog();
 
@@ -115,4 +113,5 @@ async (page) => {
     return {checks:checks.length,passed:checks,leaks,errors};
   }finally{await c.close();}
 }
+
 

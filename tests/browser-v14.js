@@ -86,8 +86,7 @@ async(page)=>{
 
     // Printable sheet, without relying on a popup being allowed.
     await p.locator('#nav [data-view=table]').click();
-    await viaMenu('table-card');
-    await p.locator('#dialog [data-action=print-sheet]').click();
+    await viaMenu('print-sheet');
     const sheetHtml=await p.evaluate(async()=>{
       const {printableSheet}=await import('./js/print.js');
       const {default:_}={default:null};
@@ -103,6 +102,7 @@ async(page)=>{
     return {checks:checks.length,passed:checks,errors};
   }finally{await c.close();}
 }
+
 
 
 
