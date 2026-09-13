@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Votre carnet privé pour Blood on the Clocktower. Déclarations, indices, hypothèses et mondes possibles, sans dévoiler le grimoire.">
+  <meta name="theme-color" content="#f7f4ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#292929" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Carnet">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme = param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./css/board.css">
+  <title>Carnet du Joueur</title>
+</head>
+<body>
+  <a class="skip" id="skip-link" href="#main">Aller au contenu</a>
+  <header class="app-header">
+    <a class="brand" href="./" aria-label="Carnet du Joueur"><span class="brand-seal" aria-hidden="true"><svg class="brand-mark" viewBox="0 0 192 192"><circle class="mk-ring" cx="96" cy="96" r="64" fill="none" stroke-width="9"/><g class="mk-ring" stroke-width="7" stroke-linecap="round"><line x1="154" y1="96" x2="144" y2="96"/><line x1="96" y1="154" x2="96" y2="144"/><line x1="38" y1="96" x2="48" y2="96"/></g><line class="mk-hour" x1="96" y1="38" x2="96" y2="48" stroke-width="7" stroke-linecap="round"/><g class="mk-key"><circle cx="96" cy="82" r="17"/><path d="M89 86 H103 L109 126 H83 Z"/></g></svg></span><span>Carnet <small>DU JOUEUR</small></span></a>
+    <div class="header-actions">
+      <span id="save-status" class="status"></span>
+      <button id="undo" class="icon-button" title="Annuler" aria-label="Annuler">↶</button>
+      <button id="settings" class="icon-button" title="Réglages" aria-label="Réglages">☷</button>
+    </div>
+  </header>
+  <div id="banner" hidden></div>
+  <main id="main" tabindex="-1"><p class="loading">Ouverture du carnet…</p></main>
+  <div id="thumb-bar" hidden></div>
+  <nav id="nav" class="bottom-nav" aria-label="Navigation principale" hidden></nav>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+  <dialog id="cover" aria-label="Écran masqué">
+    <div class="cover-content"><div class="cover-clock" aria-hidden="true">◈</div><h1>Carnet du Joueur</h1><p id="cover-text"></p><button id="uncover" class="primary"></button></div>
+  </dialog>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

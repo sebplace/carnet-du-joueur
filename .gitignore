@@ -1,0 +1,21 @@
+# Dépendances (le projet n'en a aucune, mais npm peut en créer)
+node_modules/
+package-lock.json
+
+# Artefacts de test et de capture
+*.png.tmp
+playwright-report/
+test-results/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Carnets exportés : ils contiennent des notes privées de partie
+carnet-joueur-*.json

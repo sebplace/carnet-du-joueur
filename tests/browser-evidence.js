@@ -1,0 +1,123 @@
+async(page)=>{
+  const context=await page.context().browser().newContext({viewport:{width:390,height:844},colorScheme:'dark'});
+  const p=await context.newPage(),checks=[],errors=[];
+  p.on('pageerror',e=>errors.push(e.message));
+  const unlock=async()=>{
+    await p.locator('#settings').click();
+    for(let i=0;i<7;i++)await p.locator('#app-version').click();
+    if(await p.locator('#dialog').evaluate(d=>d.open))await p.locator('#dialog .dialog-head [data-action=close]').click();
+  };
+  const check=(v,n)=>{if(!v)throw new Error(n);checks.push(n);};
+  const state=()=>p.evaluate(()=>JSON.parse(localStorage.getItem('botc-player-notebook-v1')));
+  const choose=async(name,value)=>p.locator(`#dialog [name="${name}"]`).selectOption(value);
+  const view=async v=>p.locator(`[data-view="${v}"]`).click();
+  try{
+    await p.goto('http://127.0.0.1:8794/');
+    await p.locator('[data-action=new]').first().click();
+    await p.locator('[name=title]').fill('Probabilités fictives');
+    await p.locator('[name=names]').fill('Alice\nBruno\nChloé\nDavid\nEmma\nFarid\nGaëlle');
+    await p.locator('#new-form button[type=submit]').click();
+    if(await p.locator('#dialog .onboarding').count())await p.locator('#dialog .dialog-head [data-action=close]').click();
+    await unlock();
+    await p.evaluate(()=>{
+      const g=JSON.parse(localStorage.getItem('botc-player-notebook-v1'));
+      const domains=[['washerwoman'],['empath','imp'],['empath','imp'],['chef'],['monk'],['poisoner'],['soldier']];
+      g.players.forEach((p,i)=>g.scenarios[0].domains[p.id]=domains[i]);
+      g.settings=Object.assign({},g.settings,{showEstimates:true});
+      localStorage.setItem('botc-player-notebook-v1',JSON.stringify(g));
+    });
+    await p.reload();await p.locator('.player-card').first().waitFor();
+    await p.locator('.player-card [data-action=claim]').nth(1).click();
+    for(const id of ['empath','chef','monk'])await p.locator(`[data-checkrole="${id}"]`).check();
+    check(await p.locator('#claim-picker input:checked').count()===3,'three-for-three uses actual checkboxes');
+    await choose('weight','5');
+    await p.locator('#claim-form button[type=submit]').click();
+    let g=await state();
+    check(g.claims[0].roleIds.length===3&&g.claims[0].weight===5,'multi-claim and weight persisted');
+    check(g.scenarios[0].domains[g.players[1].id].includes('imp'),'claim does not exclude outside roles');
+    await p.locator('main [data-action=estimate]').first().click();
+    if(await p.locator('#confirm-action').count())await p.locator('#confirm-action').click();
+    await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
+    check((await p.locator('#estimates-summary').innerText()).includes('Empoisonneur'),'minion presence summarized');
+    await p.locator('[data-action=player-probability]').nth(1).click();
+    await p.locator('[data-player-estimate] .probability-rows').waitFor();
+    const initial=await p.locator('[data-player-estimate]').innerText();
+    check(initial.includes('83,3')&&initial.includes('16,7'),'weighted group yields 5/6 and outside 1/6');
+    check(initial.includes('Un autre rôle'),'outside-claim probability visible');
+    check(initial.includes('Calcul partiel'),'permanent partial-model badge stays visible');
+    await p.locator('#dialog [data-action=close]').click();
+    await p.locator('.player-open').nth(1).click();
+    await p.locator('[data-action=edit-claim]').click();
+    await choose('weight','1');
+    await p.locator('#claim-form button[type=submit]').click();
+    await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
+    await p.locator('[data-action=player-probability]').nth(1).click();
+    check((await p.locator('[data-player-estimate]').innerText()).includes('50 %'),'editing weight automatically refreshes estimates');
+    await p.locator('#dialog [data-action=close]').click();
+    await p.locator('[data-action=round]').click();
+    g=await state();
+    await choose('target',g.players[2].id);await choose('source',g.players[0].id);
+    await p.locator('[name=day]').fill('3');await choose('outcome','died');
+    await p.locator('#round-form details summary').first().click();
+    const voters=p.locator('.ballot-row');
+    await voters.nth(0).locator('[data-vote=yes]').click();
+    await voters.nth(0).locator('[data-voteweight]').fill('3');await voters.nth(0).locator('[data-voteweight]').dispatchEvent('input');
+    await voters.nth(1).locator('[data-vote=no]').click();
+    await p.locator('[name=value]').fill('5');
+    await p.locator('[name=applyState]').uncheck();
+    await p.locator('#round-form button[type=submit]').click();
+    g=await state();let event=g.events.find(e=>e.type==='execution');
+    check(event.day===3&&event.playerIds[0]===g.players[2].id&&event.outcome==='died','execution target day and death outcome recorded');
+    check(event.ballot[0].choice==='yes'&&event.ballot[0].weight===3&&event.ballot[1].choice==='no'&&event.ballot[2].choice==='unknown','individual votes retain yes no unknown and special weights');
+    check(g.players[2].alive,'dated observation need not overwrite present state');
+    await view('journal');
+    await p.locator('[data-type=vote]').click();
+    check((await p.locator('#journal-entries').innerText()).includes('Exécution'),'votes filter includes execution ballots');
+    await p.locator('#note-search').fill('Bruno');
+    check(await p.locator('.timeline-item').count()===1,'journal search finds a voter');
+    await p.locator('#journal-entries details summary').click();
+    check((await p.locator('#journal-entries').innerText()).includes('Non noté'),'ballot detail shows unknown not no');
+    await view('table');
+    await p.locator('[data-action=night]').click();
+    await p.locator('[name=day]').fill('2');
+    for(const index of [3,4])await p.locator('#night-victims button').nth(index).click();
+    await p.locator('[name=complete]').check();
+    await p.locator('[name=applyState]').uncheck();
+    await p.locator('#night-form button[type=submit]').click();
+    g=await state();event=g.events.find(e=>e.type==='night');
+    check(event.day===2&&event.playerIds.length===2&&event.complete,'batch night deaths dated and persisted');
+    check(!event.influence.demonOnly,'recording deaths does not silently infer Demon-only cause');
+    await p.locator('[data-action=night]').click();
+    await p.locator('[name=day]').fill('2');await p.locator('[name=complete]').check();
+    await p.locator('#night-form button[type=submit]').click();
+    await p.locator('#form-error:not([hidden])').waitFor();
+    check((await state()).events.filter(e=>e.type==='night').length===1,'duplicate night cannot double-count evidence');
+    await p.locator('#dialog [data-action=close]').click();
+    await view('journal');await p.locator('#note-search').fill('');
+    await p.locator('[data-type=night]').click();await p.locator('[data-action=edit-round]').click();
+    await p.locator('#night-form details summary').click();
+    await p.locator('[name=demonOnly]').check();await p.locator('[name=stable]').check();await p.locator('[name=demonCapacityOptIn]').check();
+    await p.locator('#night-form button[type=submit]').click();
+    await view('table');
+    await p.locator('#estimates-summary').filter({hasText:'ne vont pas ensemble'}).waitFor();
+    check((await p.locator('#estimates-summary').innerText()).includes('Relâche une idée'),'two Demon-only deaths contradict Imp-only model without invented percentages');
+    await p.locator('#undo').click();
+    await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
+    check((await p.locator('#estimates-summary').innerText()).includes('Diablotin'),'undo removes inference effect and recalculates');
+    await p.reload();await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
+    check((await state()).claims[0].roleIds.length===3,'reload preserves structured data and consent');
+    await p.evaluate(async()=>{await navigator.serviceWorker.ready;});
+    await p.reload();await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
+    await context.setOffline(true);
+    await p.reload();await p.locator('#estimates-summary').filter({hasText:'Calcul complet'}).waitFor();
+    check((await p.locator('#estimates-summary').innerText()).includes('Empoisonneur'),'weighted worker and evidence module work offline');
+    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'probability cards fit mobile');
+    check(errors.length===0,'no browser page errors');
+    return {checks:checks.length,passed:checks,errors};
+  }finally{await context.close();}
+}
+
+
+
+
+

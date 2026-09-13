@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Carnet du Joueur">
+  <rect width="192" height="192" rx="40" fill="#292929"/>
+  <g fill="none" stroke="#b8935a" stroke-width="9">
+    <circle cx="96" cy="96" r="64"/>
+  </g>
+  <circle cx="96" cy="96" r="55" fill="none" stroke="#b8935a" stroke-width="1.6" opacity=".55"/>
+  <g stroke="#b8935a" stroke-width="7" stroke-linecap="round">
+    <line x1="96" y1="38" x2="96" y2="48"/>
+    <line x1="154" y1="96" x2="144" y2="96"/>
+    <line x1="96" y1="154" x2="96" y2="144"/>
+    <line x1="38" y1="96" x2="48" y2="96"/>
+  </g>
+  <line x1="96" y1="38" x2="96" y2="48" stroke="#fd8ea1" stroke-width="7" stroke-linecap="round"/>
+  <g fill="#f0e6d2">
+    <circle cx="96" cy="82" r="17"/>
+    <path d="M89 86 H103 L109 126 H83 Z"/>
+  </g>
+</svg>

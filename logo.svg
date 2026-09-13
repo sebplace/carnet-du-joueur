@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="lg-t lg-d">
+  <title id="lg-t">Carnet du Joueur</title>
+  <desc id="lg-d">Un sceau horaire — anneau des heures gravé, marqué d'un trou de serrure : un carnet que l'on garde fermé.</desc>
+  <!--
+    MARQUE « Le Sceau de l'Heure Gardée » / "The Kept Hour" seal.
+    Deux tons, gravé. Anneau des heures (horloge) + trou de serrure (le secret gardé).
+    Palette bougie : laiton (anneau) + heure d'accent + ivoire parchemin (serrure).
+    Variante à plat : donner une seule couleur (currentColor) à tous les traits.
+  -->
+  <defs>
+    <radialGradient id="lg-plate" cx="42%" cy="34%" r="78%">
+      <stop offset="0" stop-color="#33302e"/>
+      <stop offset="1" stop-color="#211f1d"/>
+    </radialGradient>
+  </defs>
+  <circle cx="96" cy="96" r="92" fill="url(#lg-plate)"/>
+  <g fill="none" stroke="#b8935a" stroke-width="9">
+    <circle class="mk-ring" cx="96" cy="96" r="64"/>
+  </g>
+  <circle class="mk-ring" cx="96" cy="96" r="55" fill="none" stroke="#b8935a" stroke-width="1.6" opacity=".55"/>
+  <!-- hour ticks at 12 / 3 / 6 / 9 -->
+  <g stroke="#b8935a" stroke-width="7" stroke-linecap="round">
+    <line class="mk-ring" x1="96" y1="38" x2="96" y2="48"/>
+    <line class="mk-ring" x1="154" y1="96" x2="144" y2="96"/>
+    <line class="mk-ring" x1="96" y1="154" x2="96" y2="144"/>
+    <line class="mk-ring" x1="38" y1="96" x2="48" y2="96"/>
+  </g>
+  <!-- the single kept hour, marked in the accent -->
+  <line class="mk-hour" x1="96" y1="38" x2="96" y2="48" stroke="#fd8ea1" stroke-width="7" stroke-linecap="round"/>
+  <!-- keyhole: bow + flaring stem, read as one closed shape -->
+  <g class="mk-key" fill="#f0e6d2">
+    <circle cx="96" cy="82" r="17"/>
+    <path d="M89 86 H103 L109 126 H83 Z"/>
+  </g>
+  <!-- engraved inner shadow on the keyhole for letterpress depth -->
+  <g fill="none" stroke="#211f1d" stroke-width="1.4" opacity=".35">
+    <circle cx="96" cy="82" r="17"/>
+    <path d="M89 86 H103 L109 126 H83 Z"/>
+  </g>
+</svg>

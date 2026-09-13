@@ -1,0 +1,71 @@
+Carnet du Joueur — Player's Notebook
+Copyright (c) 2026 Sébastien Place (@sebplace)
+
+FRANÇAIS
+
+Ce compagnon de joueur indépendant est une adaptation du projet
+« Grimoire du Conteur — Storyteller's Grimoire » de Sébastien Place
+(@sebplace). Il s'agit d'une application séparée, modifiée pour la prise
+de notes et la consultation côté joueur, et non du grimoire du conteur.
+Modifications : interface compagnon, import JSON limité aux données utiles,
+catalogue de noms et catégories, et sélection des reformulations originales
+françaises et anglaises des trois scripts de base.
+
+Le code source et le contenu original de ce projet, notamment les
+reformulations originales issues du Grimoire du Conteur, sont mis à
+disposition sous licence Creative Commons Attribution - Pas d'Utilisation
+Commerciale - Partage dans les Mêmes Conditions 4.0 International
+(CC BY-NC-SA 4.0).
+
+Vous devez créditer « Sébastien Place (@sebplace), Grimoire du Conteur »,
+lier la licence et signaler les modifications. L'utilisation commerciale
+n'est pas autorisée. Les adaptations doivent être partagées sous la même
+licence. Ce résumé ne remplace pas le texte juridique :
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.fr
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+EXCLUSION DES DROITS TIERS
+Cette licence ne couvre pas et n'accorde aucun droit sur la propriété
+intellectuelle de « Blood on the Clocktower », création de The Pandemonium
+Institute : marques, personnages officiels, noms de scripts, illustrations,
+textes de capacités et rappels officiels. Ces droits restent ceux de leurs
+titulaires respectifs. Ce projet est non officiel, indépendant et non
+approuvé par The Pandemonium Institute.
+
+Le catalogue livré n'inclut ni illustrations ni rappels officiels. Les
+capacités livrées sont les reformulations originales des trois scripts de
+base du Grimoire du Conteur ; les descriptions des autres rôles sont
+volontairement laissées vides. Aucun droit supplémentaire n'est accordé
+sur les contenus personnalisés importés par l'utilisateur.
+
+ENGLISH
+
+This independent player companion adapts “Grimoire du Conteur —
+Storyteller's Grimoire” by Sébastien Place (@sebplace). It is a separate
+application modified for player-side notes and reference, not the
+storyteller's grimoire. Changes include a companion interface, data-only
+JSON imports, a names-and-teams catalogue, and the original French and
+English paraphrases from the three base scripts.
+
+The source code and original content, including the original Grimoire du
+Conteur paraphrases, are licensed under Creative Commons
+Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0).
+
+Credit “Sébastien Place (@sebplace), Grimoire du Conteur”, link the licence,
+and indicate modifications. Commercial use is not permitted. Adaptations
+must be shared under the same licence. The legal text prevails:
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.en
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+THIRD-PARTY RIGHTS EXCLUSION
+This licence does not cover or grant rights to the intellectual property
+of “Blood on the Clocktower”, created by The Pandemonium Institute:
+trademarks, official characters, script names, artwork, official ability
+text and reminders. Those rights remain with their respective holders.
+This is an unofficial, independent project and is not endorsed by
+The Pandemonium Institute.
+
+The bundled catalogue contains no official artwork or reminders. Bundled
+abilities are original paraphrases from the three Grimoire du Conteur base
+scripts; descriptions for additional roles are intentionally empty. No
+additional rights are granted over custom content imported by the user.

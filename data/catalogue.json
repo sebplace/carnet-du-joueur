@@ -1,0 +1,1827 @@
+{
+  "roles": [
+    {
+      "id": "washerwoman",
+      "name": {
+        "fr": "Lavandière",
+        "en": "Washerwoman"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lors de votre première nuit, vous apprenez un rôle de Villageois en jeu parmi 2 joueurs.",
+        "en": "At the start, you know that one of two players is a specific Townsfolk."
+      }
+    },
+    {
+      "id": "librarian",
+      "name": {
+        "fr": "Bibliothécaire",
+        "en": "Librarian"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lors de votre première nuit, vous apprenez un rôle de Marginal en jeu parmi 2 joueurs (ou qu’aucun Marginal n’est en jeu).",
+        "en": "At the start, you know that one of two players is a specific Outsider (or that there are no Outsiders in play)."
+      }
+    },
+    {
+      "id": "investigator",
+      "name": {
+        "fr": "Détective",
+        "en": "Investigator"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lors de votre première nuit, vous apprenez un rôle de Sbire en jeu parmi 2 joueurs.",
+        "en": "At the start, you know that one of two players is a specific Minion."
+      }
+    },
+    {
+      "id": "chef",
+      "name": {
+        "fr": "Cuisinier",
+        "en": "Chef"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lors de votre première nuit, vous apprenez le nombre de paires de joueurs maléfiques assis côte à côte.",
+        "en": "At the start, you know how many pairs of evil players sit next to each other."
+      }
+    },
+    {
+      "id": "empath",
+      "name": {
+        "fr": "Empathe",
+        "en": "Empath"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit, vous apprenez combien de vos 2 voisins en vie sont maléfiques.",
+        "en": "Each night, you learn how many of your two living neighbours are evil."
+      }
+    },
+    {
+      "id": "fortuneteller",
+      "name": {
+        "fr": "Voyante",
+        "en": "Fortune Teller"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit, choisissez 2 joueurs et apprenez si un Démon est parmi eux. Un des joueurs bons vous apparaît comme un Démon.",
+        "en": "Each night, choose two players: you learn if either is the Demon. One good player registers as a Demon to you (red herring)."
+      }
+    },
+    {
+      "id": "undertaker",
+      "name": {
+        "fr": "Fossoyeur",
+        "en": "Undertaker"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, vous apprenez quel rôle est mort par exécution dans la journée.",
+        "en": "Each night* (except the first), you learn which character was executed today."
+      }
+    },
+    {
+      "id": "monk",
+      "name": {
+        "fr": "Moine",
+        "en": "Monk"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur (sauf vous-même) : il est protégé du Démon cette nuit.",
+        "en": "Each night* (except the first), choose another player: they are safe from the Demon tonight."
+      }
+    },
+    {
+      "id": "ravenkeeper",
+      "name": {
+        "fr": "Gardienne des corbeaux",
+        "en": "Ravenkeeper"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Si vous mourez la nuit, vous êtes réveillée pour choisir un joueur et apprendre son rôle.",
+        "en": "If you die at night, you wake to choose a player: you learn their character."
+      }
+    },
+    {
+      "id": "virgin",
+      "name": {
+        "fr": "Immaculée",
+        "en": "Virgin"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "La première fois qu’un joueur vous nomme, il est exécuté immédiatement s’il s’agit d’un Villageois.",
+        "en": "The first time you are nominated, if the nominator is a Townsfolk, they are executed immediately."
+      }
+    },
+    {
+      "id": "slayer",
+      "name": {
+        "fr": "Pourfendeuse",
+        "en": "Slayer"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Une fois par partie, dans la journée, choisissez publiquement un joueur : si ce joueur est le Démon, il meurt.",
+        "en": "Once per game, publicly during the day, choose a player: if they are the Demon, they die."
+      }
+    },
+    {
+      "id": "soldier",
+      "name": {
+        "fr": "Soldat",
+        "en": "Soldier"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Le Démon ne peut pas vous tuer.",
+        "en": "The Demon cannot kill you."
+      }
+    },
+    {
+      "id": "mayor",
+      "name": {
+        "fr": "Maire",
+        "en": "Mayor"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "S’il n’y a que 3 joueurs en vie et pas d’exécution, votre équipe gagne. Si vous deviez mourir la nuit, un autre joueur pourrait mourir à votre place.",
+        "en": "If only 3 players live and no execution occurs, your team wins. If you would die at night, another player might die instead."
+      }
+    },
+    {
+      "id": "butler",
+      "name": {
+        "fr": "Majordome",
+        "en": "Butler"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur (sauf vous-même). Le lendemain, vous pouvez voter uniquement si ce joueur vote.",
+        "en": "Each night, choose a player (not yourself): tomorrow you may only vote if they are voting too."
+      }
+    },
+    {
+      "id": "drunk",
+      "name": {
+        "fr": "Ivrogne",
+        "en": "Drunk"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Vous ne savez pas que vous êtes l’Ivrogne. Vous pensez être un Villageois, mais votre capacité ne fonctionne pas.",
+        "en": "You don't know you are the Drunk. You think you are a Townsfolk, but your ability does nothing."
+      }
+    },
+    {
+      "id": "recluse",
+      "name": {
+        "fr": "Reclus",
+        "en": "Recluse"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Vous pourriez apparaître comme maléfique et comme Sbire ou Démon, même mort.",
+        "en": "You might register as evil, and as a Minion or Demon, even when dead."
+      }
+    },
+    {
+      "id": "saint",
+      "name": {
+        "fr": "Saint",
+        "en": "Saint"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Si vous mourez par exécution, votre équipe perd.",
+        "en": "If you are executed, your team loses."
+      }
+    },
+    {
+      "id": "poisoner",
+      "name": {
+        "fr": "Empoisonneur",
+        "en": "Poisoner"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur : il est empoisonné cette nuit et le jour suivant.",
+        "en": "Each night, choose a player: they are poisoned tonight and tomorrow (their ability malfunctions)."
+      }
+    },
+    {
+      "id": "spy",
+      "name": {
+        "fr": "Espionne",
+        "en": "Spy"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Chaque nuit, vous voyez le Grimoire. Vous pourriez apparaître comme bonne et comme Villageois ou Marginal, même morte.",
+        "en": "Each night, you see the Grimoire. You might register as good, and as a Townsfolk or Outsider, even when dead."
+      }
+    },
+    {
+      "id": "scarletwoman",
+      "name": {
+        "fr": "Femme Écarlate",
+        "en": "Scarlet Woman"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "S’il y a au moins 5 joueurs en vie et que le Démon meurt, vous devenez le Démon. (Les Voyageurs ne comptent pas.)",
+        "en": "If 5 or more players are alive and the Demon dies, you become the Demon. (Travellers don't count.)"
+      }
+    },
+    {
+      "id": "baron",
+      "name": {
+        "fr": "Baron",
+        "en": "Baron"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Il y a des Marginaux supplémentaires en jeu. [+2 Marginaux]",
+        "en": "There are extra Outsiders in play. [+2 Outsiders]"
+      }
+    },
+    {
+      "id": "imp",
+      "name": {
+        "fr": "Diablotin",
+        "en": "Imp"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit* (sauf la première), choisissez un joueur : il meurt. Si vous vous tuez de cette façon, un Sbire devient le Diablotin.",
+        "en": "Each night* (except the first), choose a player: they die. If you kill yourself this way, a living Minion becomes the Imp."
+      }
+    },
+    {
+      "id": "bureaucrat",
+      "name": {
+        "fr": "Bureaucrate",
+        "en": "Bureaucrat"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Chaque nuit, désignez un joueur (pas vous) : demain, son vote compte pour 3 voix.",
+        "en": "Each night, choose a player (not yourself): tomorrow their vote counts as 3."
+      }
+    },
+    {
+      "id": "thief",
+      "name": {
+        "fr": "Voleur",
+        "en": "Thief"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Chaque nuit, désignez un joueur (pas vous) : demain, son vote compte négativement (-1).",
+        "en": "Each night, choose a player (not yourself): tomorrow their vote counts negatively."
+      }
+    },
+    {
+      "id": "gunslinger",
+      "name": {
+        "fr": "Pistolero",
+        "en": "Gunslinger"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Chaque jour, après le décompte du premier vote, vous pouvez désigner un joueur qui a voté : il meurt.",
+        "en": "Each day, after the first vote is tallied, you may choose a player who voted: they die."
+      }
+    },
+    {
+      "id": "scapegoat",
+      "name": {
+        "fr": "Bouc émissaire",
+        "en": "Scapegoat"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Si un joueur de votre alignement est exécuté, vous pouvez être exécuté à sa place.",
+        "en": "If a player of your alignment is executed, you might be executed instead."
+      }
+    },
+    {
+      "id": "beggar",
+      "name": {
+        "fr": "Mendiant",
+        "en": "Beggar"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Vous devez utiliser un jeton de vote pour voter. Un joueur mort peut vous donner le sien ; vous apprenez alors son alignement. Vous êtes sobre et sain.",
+        "en": "You must use a vote token to vote. A dead player may give you theirs; you then learn their alignment. You are sober and healthy."
+      }
+    },
+    {
+      "id": "grandmother",
+      "name": {
+        "fr": "Grand-Mère",
+        "en": "Grandmother"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lors de votre première nuit, vous apprenez un joueur bon et son rôle. Si le Démon tue ce joueur, vous mourez également.",
+        "en": "At the start, you know a good player and their character. If the Demon kills them, you die too."
+      }
+    },
+    {
+      "id": "sailor",
+      "name": {
+        "fr": "Marin",
+        "en": "Sailor"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur en vie : lui ou vous êtes ivre jusqu’au crépuscule. Vous ne pouvez pas mourir.",
+        "en": "Each night, choose a living player: you or they are drunk until dusk. You can't die."
+      }
+    },
+    {
+      "id": "chambermaid",
+      "name": {
+        "fr": "Femme de chambre",
+        "en": "Chambermaid"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit, choisissez 2 joueurs en vie (sauf vous-même) : vous apprenez combien d’entre eux se sont réveillés cette nuit à cause de leur capacité.",
+        "en": "Each night, choose 2 living players (not yourself): you learn how many woke tonight for their ability."
+      }
+    },
+    {
+      "id": "exorcist",
+      "name": {
+        "fr": "Exorciste",
+        "en": "Exorcist"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur (différent de la nuit précédente) : si c’est le Démon, il apprend qui vous êtes puis ne se réveille pas cette nuit.",
+        "en": "Each night* (except the first), choose a player (different from last night): if the Demon, they learn who you are and don't wake tonight."
+      }
+    },
+    {
+      "id": "innkeeper",
+      "name": {
+        "fr": "Aubergiste",
+        "en": "Innkeeper"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez 2 joueurs : ils ne peuvent pas mourir cette nuit, mais l’un d’eux est ivre jusqu’au crépuscule.",
+        "en": "Each night* (except the first), choose 2 players: they can't die tonight, but 1 is drunk until dusk."
+      }
+    },
+    {
+      "id": "gambler",
+      "name": {
+        "fr": "Parieur",
+        "en": "Gambler"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur et devinez son rôle. Si vous vous trompez, vous mourez.",
+        "en": "Each night* (except the first), choose a player and guess their character: if wrong, you die."
+      }
+    },
+    {
+      "id": "gossip",
+      "name": {
+        "fr": "Commère",
+        "en": "Gossip"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque jour, vous pouvez faire une annonce publiquement. Cette nuit, si votre annonce était vraie, un joueur meurt.",
+        "en": "Each day, you may make a public statement. Tonight, if it was true, a player dies."
+      }
+    },
+    {
+      "id": "courtier",
+      "name": {
+        "fr": "Courtisan",
+        "en": "Courtier"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Une fois par partie, la nuit, choisissez un rôle : il est ivre pendant 3 nuits et 3 jours.",
+        "en": "Once per game, at night, choose a character: they are drunk for 3 nights and 3 days."
+      }
+    },
+    {
+      "id": "professor",
+      "name": {
+        "fr": "Professeur",
+        "en": "Professor"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Une fois par partie, la nuit*, choisissez un joueur mort : si c’est un Villageois, il est ressuscité.",
+        "en": "Once per game, at night* (except the first), choose a dead player: if a Townsfolk, they are resurrected."
+      }
+    },
+    {
+      "id": "minstrel",
+      "name": {
+        "fr": "Ménestrel",
+        "en": "Minstrel"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lorsqu’un Sbire meurt par exécution, tous les autres joueurs (sauf les Voyageurs) sont ivres jusqu’au crépuscule du lendemain.",
+        "en": "When a Minion dies by execution, all other players (except Travellers) are drunk until dusk tomorrow."
+      }
+    },
+    {
+      "id": "tealady",
+      "name": {
+        "fr": "Tisanière",
+        "en": "Tea Lady"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Si vos deux voisins vivants sont bons, ils ne peuvent pas mourir.",
+        "en": "If both your living neighbours are good, they can't die."
+      }
+    },
+    {
+      "id": "pacifist",
+      "name": {
+        "fr": "Pacifiste",
+        "en": "Pacifist"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Les bons joueurs exécutés pourraient ne pas mourir.",
+        "en": "Executed good players might not die."
+      }
+    },
+    {
+      "id": "fool",
+      "name": {
+        "fr": "Fou du roi",
+        "en": "Fool"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "La première fois que vous devriez mourir, vous ne mourez pas.",
+        "en": "The first time you would die, you don't."
+      }
+    },
+    {
+      "id": "tinker",
+      "name": {
+        "fr": "Bricoleur",
+        "en": "Tinker"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Vous pourriez mourir à tout moment.",
+        "en": "You might die at any time."
+      }
+    },
+    {
+      "id": "moonchild",
+      "name": {
+        "fr": "Sélénite",
+        "en": "Moonchild"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Lorsque vous apprenez que vous êtes morte, choisissez publiquement un joueur vivant. Cette nuit, si ce joueur était bon, il meurt.",
+        "en": "When you learn you died, publicly choose 1 living player. Tonight, if they were good, they die."
+      }
+    },
+    {
+      "id": "goon",
+      "name": {
+        "fr": "Gros Bras",
+        "en": "Goon"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Chaque nuit, le premier joueur qui vous choisit avec sa capacité est ivre jusqu'au crépuscule. Vous devenez son alignement.",
+        "en": "Each night, the 1st player to choose you with their ability becomes drunk until dusk. You become their alignment."
+      }
+    },
+    {
+      "id": "lunatic",
+      "name": {
+        "fr": "Dément",
+        "en": "Lunatic"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Vous pensez que vous êtes un Démon, mais vous ne l’êtes pas. Le vrai Démon sait qui vous êtes et qui vous choisissez la nuit.",
+        "en": "You think you are the Demon, but you are not. The real Demon knows who you are and whom you choose at night."
+      }
+    },
+    {
+      "id": "godfather",
+      "name": {
+        "fr": "Parrain",
+        "en": "Godfather"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Lors de votre première nuit, vous apprenez quels Marginaux sont en jeu. Si un Marginal meurt dans la journée, choisissez un joueur cette nuit : il meurt. [-1 ou +1 Marginal]",
+        "en": "At the start, you know which Outsiders are in play. If one dies today, choose a player tonight: they die. [−1 or +1 Outsider]"
+      }
+    },
+    {
+      "id": "devilsadvocate",
+      "name": {
+        "fr": "Avocat du Diable",
+        "en": "Devil's Advocate"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur en vie (différent de la nuit précédente) : s’il est exécuté le lendemain, il ne meurt pas.",
+        "en": "Each night, choose a living player (different from last night): if executed tomorrow, they don't die."
+      }
+    },
+    {
+      "id": "assassin",
+      "name": {
+        "fr": "Assassin",
+        "en": "Assassin"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Une fois par partie, la nuit*, choisissez un joueur : il meurt, même s’il ne peut normalement pas mourir.",
+        "en": "Once per game, at night* (except the first), choose a player: they die, even if they couldn't otherwise."
+      }
+    },
+    {
+      "id": "mastermind",
+      "name": {
+        "fr": "Conspirateur",
+        "en": "Mastermind"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Si le Démon meurt par exécution (mettant fin à la partie), vous jouez 1 jour de plus. Si un joueur est exécuté ce jour-là, son équipe perd.",
+        "en": "If the Demon dies by execution (ending the game), play 1 more day. If a player is then executed, their team loses."
+      }
+    },
+    {
+      "id": "zombuul",
+      "name": {
+        "fr": "Zombuul",
+        "en": "Zombuul"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit*, si personne n’est mort dans la journée, choisissez un joueur : il meurt. La première fois que vous mourez, vous restez en vie, mais apparaissez comme mort.",
+        "en": "Each night* (except the first), if no-one died today, choose a player: they die. The 1st time you die, you live but register as dead."
+      }
+    },
+    {
+      "id": "pukka",
+      "name": {
+        "fr": "Pukka",
+        "en": "Pukka"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur : il est empoisonné. Le joueur précédemment empoisonné meurt, puis devient sain.",
+        "en": "Each night, choose a player: they are poisoned. The previously poisoned player dies then becomes healthy."
+      }
+    },
+    {
+      "id": "shabaloth",
+      "name": {
+        "fr": "Shabaloth",
+        "en": "Shabaloth"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez 2 joueurs : ils meurent. Un joueur mort que vous avez choisi lors de la nuit précédente pourrait être recraché.",
+        "en": "Each night* (except the first), choose 2 players: they die. A dead player you chose last night might be regurgitated."
+      }
+    },
+    {
+      "id": "po",
+      "name": {
+        "fr": "Po",
+        "en": "Po"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit*, vous pouvez choisir un joueur : il meurt. Si votre dernier choix était « personne », choisissez 3 joueurs cette nuit.",
+        "en": "Each night* (except the first), you may choose a player: they die. If your last choice was no-one, choose 3 players tonight."
+      }
+    },
+    {
+      "id": "apprentice",
+      "name": {
+        "fr": "Apprenti",
+        "en": "Apprentice"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Votre 1re nuit, vous gagnez une capacité de Villageois (si bon) ou de Sbire (si maléfique).",
+        "en": "On your 1st night, you gain a Townsfolk ability (if good) or a Minion ability (if evil)."
+      }
+    },
+    {
+      "id": "matron",
+      "name": {
+        "fr": "Matrone",
+        "en": "Matron"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Chaque jour, vous pouvez échanger jusqu'à 3 paires de joueurs de siège. Les joueurs ne peuvent pas quitter leur siège pour parler en privé.",
+        "en": "Each day, you may swap up to 3 pairs of players' seats. Players may not leave their seats to talk privately."
+      }
+    },
+    {
+      "id": "judge",
+      "name": {
+        "fr": "Juge",
+        "en": "Judge"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Une fois par partie, si un autre joueur a nominé, vous pouvez forcer l'exécution en cours à réussir ou à échouer.",
+        "en": "Once per game, if another player nominated, you may force the current execution to pass or fail."
+      }
+    },
+    {
+      "id": "bishop",
+      "name": {
+        "fr": "Évêque",
+        "en": "Bishop"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Seul le Conteur peut nominer. Chaque jour, au moins 1 joueur du camp opposé doit être nominé.",
+        "en": "Only the Storyteller can nominate. Each day, at least 1 opposite-alignment player must be nominated."
+      }
+    },
+    {
+      "id": "voudon",
+      "name": {
+        "fr": "Voudon",
+        "en": "Voudon"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Seuls vous et les morts peuvent voter, sans jeton de vote. La majorité de 50% n'est pas requise.",
+        "en": "Only you and the dead can vote, without a vote token. A 50% majority is not required."
+      }
+    },
+    {
+      "id": "clockmaker",
+      "name": {
+        "fr": "Horloger",
+        "en": "Clockmaker"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lors de votre première nuit, vous apprenez à combien de places du Démon est assis son Sbire le plus proche.",
+        "en": "At the start, you know how many steps from the Demon to its nearest Minion."
+      }
+    },
+    {
+      "id": "dreamer",
+      "name": {
+        "fr": "Rêveur",
+        "en": "Dreamer"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur (ni vous-même ni un Voyageur) : vous apprenez 1 rôle bon et 1 rôle maléfique, dont 1 est correct.",
+        "en": "Each night, choose a player (not yourself/Travellers): you learn 1 good and 1 evil character, one of which is correct."
+      }
+    },
+    {
+      "id": "snakecharmer",
+      "name": {
+        "fr": "Charmeur de Serpents",
+        "en": "Snake Charmer"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur en vie : si c’est un Démon, il échange son rôle et son alignement avec vous, puis il est empoisonné.",
+        "en": "Each night, choose a living player: a chosen Demon swaps character & alignment with you and is then poisoned."
+      }
+    },
+    {
+      "id": "mathematician",
+      "name": {
+        "fr": "Mathématicien",
+        "en": "Mathematician"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit, vous apprenez combien de joueurs ont vu leur capacité dysfonctionner (depuis l’aube) à cause de la capacité d’un autre rôle.",
+        "en": "Each night, you learn how many players' abilities worked abnormally (since dawn) due to another ability."
+      }
+    },
+    {
+      "id": "flowergirl",
+      "name": {
+        "fr": "Fleuriste",
+        "en": "Flowergirl"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, vous apprenez si un Démon a voté dans la journée.",
+        "en": "Each night* (except the first), you learn if a Demon voted today."
+      }
+    },
+    {
+      "id": "towncrier",
+      "name": {
+        "fr": "Crieur Public",
+        "en": "Town Crier"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, vous apprenez si un Sbire a nommé quelqu’un dans la journée.",
+        "en": "Each night* (except the first), you learn if a Minion nominated today."
+      }
+    },
+    {
+      "id": "oracle",
+      "name": {
+        "fr": "Oracle",
+        "en": "Oracle"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque nuit*, vous apprenez combien de joueurs morts sont maléfiques.",
+        "en": "Each night* (except the first), you learn how many dead players are evil."
+      }
+    },
+    {
+      "id": "savant",
+      "name": {
+        "fr": "Savant",
+        "en": "Savant"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Chaque jour, vous pouvez rendre visite au Conteur pour apprendre 2 informations en privé : l’une est vraie et l’autre est fausse.",
+        "en": "Each day, you may visit the Storyteller privately to learn 2 things: 1 true and 1 false."
+      }
+    },
+    {
+      "id": "seamstress",
+      "name": {
+        "fr": "Couturière",
+        "en": "Seamstress"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Une fois par partie, la nuit, choisissez 2 joueurs (sauf vous-même) : vous apprenez s’ils sont du même alignement.",
+        "en": "Once per game, at night, choose 2 players (not yourself): you learn if they are the same alignment."
+      }
+    },
+    {
+      "id": "philosopher",
+      "name": {
+        "fr": "Philosophe",
+        "en": "Philosopher"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Une fois par partie, la nuit, choisissez un rôle bon : gagnez cette capacité. Si ce rôle est en jeu, le joueur qui l’a est ivre.",
+        "en": "Once per game, at night, choose a good character's ability: you gain it. If that character is in play, they become drunk."
+      }
+    },
+    {
+      "id": "artist",
+      "name": {
+        "fr": "Artiste",
+        "en": "Artist"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Une fois par partie, dans la journée, posez en privé une question fermée (oui/non) au Conteur.",
+        "en": "Once per game, during the day, privately ask the Storyteller any yes/no question."
+      }
+    },
+    {
+      "id": "juggler",
+      "name": {
+        "fr": "Jongleur",
+        "en": "Juggler"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Lors de votre premier jour, devinez publiquement jusqu’à 5 rôles de joueurs. Cette nuit, vous apprenez combien étaient corrects.",
+        "en": "On your 1st day, publicly guess up to 5 players' characters; that night you learn how many you got right."
+      }
+    },
+    {
+      "id": "sage",
+      "name": {
+        "fr": "Sage",
+        "en": "Sage"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "Si le Démon vous tue, vous apprenez qui est le Démon parmi 2 joueurs.",
+        "en": "If the Demon kills you, you learn it is 1 of 2 players."
+      }
+    },
+    {
+      "id": "mutant",
+      "name": {
+        "fr": "Bête de foire",
+        "en": "Mutant"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Si vous jouez la folie d’être un Marginal, vous pourriez être exécuté.",
+        "en": "If you are 'mad' about being an Outsider, you might be executed."
+      }
+    },
+    {
+      "id": "sweetheart",
+      "name": {
+        "fr": "Dulcinée",
+        "en": "Sweetheart"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Lorsque vous mourez, 1 joueur est désormais ivre.",
+        "en": "When you die, 1 player is drunk from now on."
+      }
+    },
+    {
+      "id": "barber",
+      "name": {
+        "fr": "Barbier",
+        "en": "Barber"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Si vous mourez dans la journée ou pendant la nuit, le Démon peut choisir 2 joueurs (mais pas un autre Démon) qui échangent alors leur rôle.",
+        "en": "If you die during the day or at night, the Demon may swap the characters of 2 players (not another Demon)."
+      }
+    },
+    {
+      "id": "klutz",
+      "name": {
+        "fr": "Maladroit",
+        "en": "Klutz"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "Lorsque vous apprenez que vous êtes mort, choisissez publiquement 1 joueur en vie. S’il est maléfique, votre équipe perd.",
+        "en": "When you learn you died, publicly choose 1 living player: if evil, your team loses."
+      }
+    },
+    {
+      "id": "eviltwin",
+      "name": {
+        "fr": "Jumelle Maléfique",
+        "en": "Evil Twin"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Vous et un joueur d’alignement opposé vous connaissez mutuellement. Si le joueur bon est exécuté, le Mal gagne. Le Bien ne peut pas gagner si vous restez tous les deux en vie.",
+        "en": "You and an opposing player know each other. If the good twin is executed, evil wins. Good can't win while you both live."
+      }
+    },
+    {
+      "id": "witch",
+      "name": {
+        "fr": "Sorcière",
+        "en": "Witch"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur : s’il nomme quelqu’un le lendemain, il meurt. S’il ne reste que 3 joueurs en vie, vous perdez cette capacité.",
+        "en": "Each night, choose a player: if they nominate tomorrow, they die. If only 3 live, you lose this ability."
+      }
+    },
+    {
+      "id": "cerenovus",
+      "name": {
+        "fr": "Cerenovus",
+        "en": "Cerenovus"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Chaque nuit, choisissez un joueur et un rôle bon : le lendemain, il doit être « fou » d’être ce rôle. Sinon, il pourrait être exécuté.",
+        "en": "Each night, choose a player and a good character: they are 'mad' they are it tomorrow, or may be executed."
+      }
+    },
+    {
+      "id": "pithag",
+      "name": {
+        "fr": "Guenaude",
+        "en": "Pit-Hag"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur et le rôle qu’il devient (s’il n’est pas en jeu). Si un Démon est créé, les morts de cette nuit sont arbitraires.",
+        "en": "Each night* (except the first), choose a player and a not-in-play character they become. If a Demon is made, tonight's deaths are arbitrary."
+      }
+    },
+    {
+      "id": "fanggu",
+      "name": {
+        "fr": "Fang Gu",
+        "en": "Fang Gu"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur : il meurt. Le premier Marginal tué ainsi devient un Fang Gu maléfique et vous mourez à sa place. [+1 Marginal]",
+        "en": "Each night* (except the first), choose a player: they die. The 1st Outsider killed becomes an evil Fang Gu and you die instead. [+1 Outsider]"
+      }
+    },
+    {
+      "id": "vigormortis",
+      "name": {
+        "fr": "Vigormortis",
+        "en": "Vigormortis"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur : il meurt. Les Sbires que vous tuez gardent leur capacité et empoisonnent 1 Villageois voisin. [-1 Marginal]",
+        "en": "Each night* (except the first), choose a player: they die. Minions you kill keep their ability and poison 1 Townsfolk neighbour. [−1 Outsider]"
+      }
+    },
+    {
+      "id": "nodashii",
+      "name": {
+        "fr": "No Dashii",
+        "en": "No Dashii"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur : il meurt. Vos 2 Villageois voisins sont empoisonnés.",
+        "en": "Each night* (except the first), choose a player: they die. Your 2 Townsfolk neighbours are poisoned."
+      }
+    },
+    {
+      "id": "vortox",
+      "name": {
+        "fr": "Vortox",
+        "en": "Vortox"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "Chaque nuit*, choisissez un joueur : il meurt. Les capacités des Villageois donnent de fausses informations. Chaque jour, si personne n’est exécuté, les Maléfiques gagnent.",
+        "en": "Each night* (except the first), choose a player: they die. Townsfolk abilities give false info. Each day with no execution, evil wins."
+      }
+    },
+    {
+      "id": "barista",
+      "name": {
+        "fr": "Barista",
+        "en": "Barista"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Chaque nuit, jusqu'au crépuscule, un joueur soit devient sobre/sain avec infos vraies, soit voit sa capacité agir deux fois. Il sait laquelle.",
+        "en": "Each night, until dusk, a player either becomes sober/healthy with true info, or their ability works twice. They learn which."
+      }
+    },
+    {
+      "id": "harlot",
+      "name": {
+        "fr": "Compagne de nuit",
+        "en": "Harlot"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Chaque nuit* (sauf la 1re), désignez un joueur vivant : s'il accepte, vous apprenez son personnage, mais vous pouvez tous deux mourir.",
+        "en": "Each night* (except the first), choose a living player: if they agree, you learn their character, but you both might die."
+      }
+    },
+    {
+      "id": "butcher",
+      "name": {
+        "fr": "Boucher",
+        "en": "Butcher"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Chaque jour, après la 1re exécution, vous pouvez nominer à nouveau.",
+        "en": "Each day, after the 1st execution, you may nominate again."
+      }
+    },
+    {
+      "id": "bonecollector",
+      "name": {
+        "fr": "Charognard",
+        "en": "Bone Collector"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Une fois par partie, lors d'une nuit autre que la première, désignez un joueur mort : il retrouve sa capacité jusqu'au crépuscule.",
+        "en": "Once per game, on a night other than the first, choose a dead player: they regain their ability until dusk."
+      }
+    },
+    {
+      "id": "deviant",
+      "name": {
+        "fr": "Comédien",
+        "en": "Deviant"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "Si vous avez été drôle aujourd'hui, vous ne pouvez pas mourir par exil.",
+        "en": "If you were funny today, you cannot die by exile."
+      }
+    },
+    {
+      "id": "noble",
+      "name": {
+        "fr": "Noble",
+        "en": "Noble"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "bountyhunter",
+      "name": {
+        "fr": "Chasseur de primes",
+        "en": "Bounty Hunter"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "pixie",
+      "name": {
+        "fr": "Farfadet",
+        "en": "Pixie"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "general",
+      "name": {
+        "fr": "Général",
+        "en": "General"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "preacher",
+      "name": {
+        "fr": "Prédicateur",
+        "en": "Preacher"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "king",
+      "name": {
+        "fr": "Roi",
+        "en": "King"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "balloonist",
+      "name": {
+        "fr": "Aéronaute",
+        "en": "Balloonist"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "cultleader",
+      "name": {
+        "fr": "Gourou",
+        "en": "Cult Leader"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "lycanthrope",
+      "name": {
+        "fr": "Lycanthrope",
+        "en": "Lycanthrope"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "amnesiac",
+      "name": {
+        "fr": "Amnésique",
+        "en": "Amnesiac"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "nightwatchman",
+      "name": {
+        "fr": "Veilleur de nuit",
+        "en": "Nightwatchman"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "engineer",
+      "name": {
+        "fr": "Ingénieur",
+        "en": "Engineer"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "fisherman",
+      "name": {
+        "fr": "Pêcheur",
+        "en": "Fisherman"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "huntsman",
+      "name": {
+        "fr": "Chasseur",
+        "en": "Huntsman"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "alchemist",
+      "name": {
+        "fr": "Alchimiste",
+        "en": "Alchemist"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "farmer",
+      "name": {
+        "fr": "Fermier",
+        "en": "Farmer"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "magician",
+      "name": {
+        "fr": "Magicien",
+        "en": "Magician"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "choirboy",
+      "name": {
+        "fr": "Choriste",
+        "en": "Choirboy"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "poppygrower",
+      "name": {
+        "fr": "Cultivateur de pavots",
+        "en": "Poppy Grower"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "atheist",
+      "name": {
+        "fr": "Athée",
+        "en": "Atheist"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "cannibal",
+      "name": {
+        "fr": "Cannibale",
+        "en": "Cannibal"
+      },
+      "team": "townsfolk",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "snitch",
+      "name": {
+        "fr": "Mouchard",
+        "en": "Snitch"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "acrobat",
+      "name": {
+        "fr": "Acrobate",
+        "en": "Acrobat"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "puzzlemaster",
+      "name": {
+        "fr": "Maître des énigmes",
+        "en": "Puzzlemaster"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "heretic",
+      "name": {
+        "fr": "Hérétique",
+        "en": "Heretic"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "damsel",
+      "name": {
+        "fr": "Demoiselle",
+        "en": "Damsel"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "golem",
+      "name": {
+        "fr": "Golem",
+        "en": "Golem"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "politician",
+      "name": {
+        "fr": "Politicien",
+        "en": "Politician"
+      },
+      "team": "outsider",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "widow",
+      "name": {
+        "fr": "Veuve",
+        "en": "Widow"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "fearmonger",
+      "name": {
+        "fr": "Semeur de peur",
+        "en": "Fearmonger"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "psychopath",
+      "name": {
+        "fr": "Psychopathe",
+        "en": "Psychopath"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "goblin",
+      "name": {
+        "fr": "Gobelin",
+        "en": "Goblin"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "mephit",
+      "name": {
+        "fr": "Méphite",
+        "en": "Mephit"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "mezepheles",
+      "name": {
+        "fr": "Mezepheles",
+        "en": "Mezepheles"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "marionette",
+      "name": {
+        "fr": "Marionnette",
+        "en": "Marionette"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "boomdandy",
+      "name": {
+        "fr": "Boomdandy",
+        "en": "Boomdandy"
+      },
+      "team": "minion",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "lilmonsta",
+      "name": {
+        "fr": "Lil' Monsta",
+        "en": "Lil' Monsta"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "lleech",
+      "name": {
+        "fr": "Lleech",
+        "en": "Lleech"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "alhadikhia",
+      "name": {
+        "fr": "Al-Hadikhia",
+        "en": "Al-Hadikhia"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "legion",
+      "name": {
+        "fr": "Légion",
+        "en": "Legion"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "leviathan",
+      "name": {
+        "fr": "Léviathan",
+        "en": "Leviathan"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "riot",
+      "name": {
+        "fr": "Émeute",
+        "en": "Riot"
+      },
+      "team": "demon",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "gangster",
+      "name": {
+        "fr": "Gangster",
+        "en": "Gangster"
+      },
+      "team": "traveller",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "doomsayer",
+      "name": {
+        "fr": "Prophète de malheur",
+        "en": "Doomsayer"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "angel",
+      "name": {
+        "fr": "Ange",
+        "en": "Angel"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "buddhist",
+      "name": {
+        "fr": "Bouddhiste",
+        "en": "Buddhist"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "hellslibrarian",
+      "name": {
+        "fr": "Bibliothécaire des enfers",
+        "en": "Hell's Librarian"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "revolutionary",
+      "name": {
+        "fr": "Révolutionnaire",
+        "en": "Revolutionary"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "fiddler",
+      "name": {
+        "fr": "Violoneux",
+        "en": "Fiddler"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "toymaker",
+      "name": {
+        "fr": "Faiseur de jouets",
+        "en": "Toymaker"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "fibbin",
+      "name": {
+        "fr": "Menteur",
+        "en": "Fibbin"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "duchess",
+      "name": {
+        "fr": "Duchesse",
+        "en": "Duchess"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "sentinel",
+      "name": {
+        "fr": "Sentinelle",
+        "en": "Sentinel"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "spiritofivory",
+      "name": {
+        "fr": "Esprit d'ivoire",
+        "en": "Spirit of Ivory"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "djinn",
+      "name": {
+        "fr": "Djinn",
+        "en": "Djinn"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    },
+    {
+      "id": "stormcatcher",
+      "name": {
+        "fr": "Capteur d'orage",
+        "en": "Storm Catcher"
+      },
+      "team": "fabled",
+      "ability": {
+        "fr": "",
+        "en": ""
+      }
+    }
+  ],
+  "scripts": [
+    {
+      "id": "trouble-brewing",
+      "name": "Trouble Brewing",
+      "roleIds": [
+        "washerwoman",
+        "librarian",
+        "investigator",
+        "chef",
+        "empath",
+        "fortuneteller",
+        "undertaker",
+        "monk",
+        "ravenkeeper",
+        "virgin",
+        "slayer",
+        "soldier",
+        "mayor",
+        "butler",
+        "drunk",
+        "recluse",
+        "saint",
+        "poisoner",
+        "spy",
+        "scarletwoman",
+        "baron",
+        "imp",
+        "bureaucrat",
+        "thief",
+        "gunslinger",
+        "scapegoat",
+        "beggar"
+      ]
+    },
+    {
+      "id": "bad-moon-rising",
+      "name": "Bad Moon Rising",
+      "roleIds": [
+        "grandmother",
+        "sailor",
+        "chambermaid",
+        "exorcist",
+        "innkeeper",
+        "gambler",
+        "gossip",
+        "courtier",
+        "professor",
+        "minstrel",
+        "tealady",
+        "pacifist",
+        "fool",
+        "tinker",
+        "moonchild",
+        "goon",
+        "lunatic",
+        "godfather",
+        "devilsadvocate",
+        "assassin",
+        "mastermind",
+        "zombuul",
+        "pukka",
+        "shabaloth",
+        "po",
+        "apprentice",
+        "matron",
+        "judge",
+        "bishop",
+        "voudon"
+      ]
+    },
+    {
+      "id": "sects-and-violets",
+      "name": "Sects & Violets",
+      "roleIds": [
+        "clockmaker",
+        "dreamer",
+        "snakecharmer",
+        "mathematician",
+        "flowergirl",
+        "towncrier",
+        "oracle",
+        "savant",
+        "seamstress",
+        "philosopher",
+        "artist",
+        "juggler",
+        "sage",
+        "mutant",
+        "sweetheart",
+        "barber",
+        "klutz",
+        "eviltwin",
+        "witch",
+        "cerenovus",
+        "pithag",
+        "fanggu",
+        "vigormortis",
+        "nodashii",
+        "vortox",
+        "barista",
+        "harlot",
+        "butcher",
+        "bonecollector",
+        "deviant"
+      ]
+    }
+  ]
+}
