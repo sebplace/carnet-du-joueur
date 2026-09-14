@@ -2,6 +2,40 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.0.0
+
+Retour de test sur la 1.9 : « que signifie le dit qui apparait sur le schema ? ».
+Le cadran ecrivait « dit » la ou la legende, juste en dessous, ecrivait
+« communique ». Deux mots pour une seule relation, aucun sens de lecture, et un
+mot qui signifiait en realite « contenu inconnu ».
+
+### Un seul vocabulaire
+- Le mot d'un lien est desormais le meme sur le trait, dans la legende et sur la
+  pastille de la liste.
+- Une etiquette de trait porte toujours le CONTENU du lien : le personnage quand
+  il est connu. La categorie reste portee par le style du trait et la legende.
+
+### Le cas vide s'annonce comme tel
+- Un propos sans personnage nomme affiche « sans detail » au lieu de « dit », et
+  la phrase de la liste se termine par « sans role precise ».
+
+### Le sens de lecture est visible
+- Les liens orientes (propos, vote, nomination) portent une fleche qui va de qui
+  parle vers qui est vise. Un conflit ou une hypothese lient deux sieges a
+  egalite : ils n'en portent pas.
+- Une ligne explique la fleche des qu'une seule est a l'ecran.
+
+### Lisibilite du cadran
+- Une etiquette ne se pose plus sous un cercle de siege : les sieges sont
+  desormais des obstacles au placement.
+- Deux liens sur une meme paire suivaient la meme courbe et le second
+  disparaissait sous le premier. Leurs traces sont maintenant ecartes.
+- Une note trop longue est coupee sur un mot entier, plus au signe pres.
+
+### Partie de demonstration
+- La note d'exemple supposait connu le format d'information de l'Empathe et
+  parlait d'un « 1 » sans unite. Elle dit maintenant ce que le chiffre signifie.
+
 ## 1.9.0
 
 Retour de test sur le cadran : on ne comprenait pas au premier coup d'oeil ce qui

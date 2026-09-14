@@ -227,3 +227,111 @@ test('17. two links on the same pair never stack their labels', () => {
   }
 });
 
+// Sebastien, sur la 1.9 publiee : « que signifie le dit qui apparait sur le
+// schema ? ». Le cadran disait « dit » la ou la legende disait « communique »,
+// sans direction et sans contenu. Une etiquette doit porter le CONTENU du lien,
+// le style du trait porte la categorie, et un seul mot sert les deux.
+
+function labelsOf(svg) {
+  return [...svg.matchAll(/<text class="plan-chord-label"[^>]*x="([\d.]+)" y="([\d.]+)"[^>]*style="font-size:([\d.]+)px"[^>]*>([^<]*)</g)]
+    .map(m => ({x: +m[1], y: +m[2], font: +m[3], text: m[4]}));
+}
+
+function drawPlan(game, selected) {
+  const model = buildPlanModel(game, {selectedId: selected, size: 320});
+  return {model, svg: renderPlan(model, {lang: 'fr', roleName: id => ROLE_NAMES[id] || id, selectedId: selected})};
+}
+
+// Bruno parle d Alice sans lui attribuer de role : le lien existe, son contenu
+// est inconnu. C est le cas exact qui affichait « dit ».
+function toldNoRoleGame() {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  g.claims = [];
+  g.events = [{id: 'e9', type: 'info', playerIds: [a.id], sourceId: b.id, roleId: '', text: 'note libre', value: '', day: 1, phase: 'day', aliveSnapshot: [], ballot: [], outcome: 'unknown', complete: false, influence: {roleIds: [], multiplier: 1, demonOnly: false, stable: false}}];
+  return {game: validateGame(g), selected: a.id};
+}
+
+function voteGame() {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  g.claims = [];
+  g.events = [{id: 'v1', type: 'execution', playerIds: [b.id], sourceId: '', roleId: '', text: '', value: '', day: 1, phase: 'day', aliveSnapshot: [], ballot: [{playerId: a.id, choice: 'yes', weight: 1}], outcome: 'unknown', complete: false, influence: {roleIds: [], multiplier: 1, demonOnly: false, stable: false}}];
+  return {game: validateGame(g), selected: a.id};
+}
+
+test('18. le cadran et la liste emploient le meme mot pour un meme lien', () => {
+  const {game, selected} = voteGame();
+  const {svg} = drawPlan(game, selected);
+  const label = labelsOf(svg)[0];
+  const chip = svg.match(/<span class="plan-chip[^"]*">([^<]*)</);
+  assert.ok(label, 'une etiquette est dessinee sur le trait');
+  assert.ok(chip, 'une pastille est dessinee dans la liste');
+  assert.equal(label.text, chip[1], 'le trait et la pastille disent le meme mot');
+  assert.ok(!/>contre</.test(svg), 'le vocabulaire parallele du cadran a disparu');
+});
+
+test('19. un propos sans role avoue qu on ignore ce qui a ete dit', () => {
+  const {game, selected} = toldNoRoleGame();
+  const {svg} = drawPlan(game, selected);
+  const label = labelsOf(svg)[0];
+  assert.ok(label, 'le lien est bien dessine');
+  assert.equal(label.text, 'sans détail', 'le trait annonce une absence, pas une information');
+  assert.ok(svg.includes('sans rôle précisé'), 'la phrase de la liste le dit aussi en toutes lettres');
+  assert.ok(!/>dit</.test(svg), 'l ancienne etiquette muette a disparu');
+});
+
+test('20. seuls les liens orientes portent une fleche, et elle est expliquee', () => {
+  const conflict = conflictGame();
+  const {svg: svgC} = drawPlan(conflict, conflict.players[0].id);
+  assert.ok(!svgC.includes('<polygon class="plan-arrow'), 'un conflit lie deux sieges a egalite, sans direction');
+  assert.ok(!svgC.includes('plan-arrow-hint'), 'et rien n explique une fleche absente');
+  const {game, selected} = toldNoRoleGame();
+  const {svg} = drawPlan(game, selected);
+  assert.ok(svg.includes('<polygon class="plan-arrow'), 'un propos va de qui parle vers qui est vise');
+  assert.ok(svg.includes('plan-arrow-hint'), 'le sens de lecture de la fleche est donne');
+});
+
+test('21. aucune etiquette ne se pose sous un siege', () => {
+  const {game, selected} = spokeGame();
+  const {model, svg} = drawPlan(game, selected);
+  const labels = labelsOf(svg);
+  assert.ok(labels.length >= 3, 'plusieurs etiquettes sont posees');
+  for (const L of labels) {
+    const w = Math.max(L.font, 0.56 * L.font * L.text.length);
+    for (const s of model.seats) {
+      const dx = Math.min(L.x + w / 2, s.x + model.nodeR) - Math.max(L.x - w / 2, s.x - model.nodeR);
+      const dy = Math.min(L.y + L.font * 0.6, s.y + model.nodeR) - Math.max(L.y - L.font * 0.6, s.y - model.nodeR);
+      assert.ok(!(dx > 0 && dy > 0), `l etiquette "${L.text}" passe sous le siege ${s.seat}`);
+    }
+  }
+});
+
+test('23. une note trop longue est coupee sur un mot entier', () => {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  const longNote = 'Bruno déclare Empathe et annonce le chiffre 1 : un de ses deux voisins vivants serait maléfique. À vérifier cette nuit.';
+  g.claims = [];
+  g.events = [{id: 'e9', type: 'info', playerIds: [a.id], sourceId: b.id, roleId: '', text: longNote, value: '', day: 1, phase: 'day', aliveSnapshot: [], ballot: [], outcome: 'unknown', complete: false, influence: {roleIds: [], multiplier: 1, demonOnly: false, stable: false}}];
+  const {svg} = drawPlan(validateGame(g), a.id);
+  const note = svg.match(/<span class="plan-link-note">([^<]*)</);
+  assert.ok(note, 'la note est affichee sous le lien');
+  assert.ok(note[1].endsWith('…'), 'la coupe est signalee au lecteur');
+  const body = note[1].slice(0, -1);
+  assert.ok(longNote.startsWith(body), 'le fragment garde est bien le debut de la note');
+  const next = longNote[body.length] || ' ';
+  const letter = /[a-zà-ÿ]/i;
+  assert.ok(!(letter.test(next) && letter.test(body.slice(-1))), `aucun mot n est coupe en deux, ici "${body.slice(-12)}"`);
+});
+
+test('22. deux liens sur une meme paire ne se cachent plus l un l autre', () => {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  g.claims = [{id: 'k3', playerId: b.id, sourceId: a.id, roleIds: ['chef'], note: '', day: 1, phase: 'day', visibility: 'private', weight: 1}];
+  g.events = [{id: 'v1', type: 'execution', playerIds: [b.id], sourceId: '', roleId: '', text: '', value: '', day: 1, phase: 'day', aliveSnapshot: [], ballot: [{playerId: a.id, choice: 'yes', weight: 1}], outcome: 'unknown', complete: false, influence: {roleIds: [], multiplier: 1, demonOnly: false, stable: false}}];
+  const {svg} = drawPlan(validateGame(g), a.id);
+  const curves = [...svg.matchAll(/<path class="plan-chord[^"]*"[^>]*d="([^"]+)"/g)].map(m => m[1]);
+  assert.ok(curves.length >= 2, 'la paire porte bien deux liens');
+  assert.equal(new Set(curves).size, curves.length, 'chaque lien suit sa propre courbe');
+});
+

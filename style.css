@@ -448,6 +448,12 @@ dialog[open]{animation:cp-rise .16s ease-out}
 .plan-chord.plan-kind-nominated{stroke:var(--cp-warning);stroke-dasharray:9 4 2 4}
 .plan-chord.plan-kind-paired{stroke:var(--cp-success);stroke-dasharray:1 6}
 .plan-chord.plan-kind-conflict{stroke:var(--cp-danger);stroke-dasharray:11 6}
+/* flèche de sens : part de qui parle, pointe vers qui est visé. Pleine, sans contour, pour rester lisible sur un cadran de 320px. Seuls told/voted/nominated en portent une : conflit et hypothèse lient deux sièges à égalité */
+.plan-arrow{stroke:none}
+.plan-arrow.plan-kind-told{fill:var(--cp-accent)}
+.plan-arrow.plan-kind-voted{fill:var(--cp-brass)}
+.plan-arrow.plan-kind-nominated{fill:var(--cp-warning)}
+.plan-arrow-hint{margin:0 0 10px;font-size:var(--fs-caption);color:var(--cp-text-muted)}
 /* étiquette de corde : désormais la SUBSTANCE (rôle court ou verbe court) ; halo surface renforcé pour rester net même quand deux étiquettes se frôlent au centre */
 .plan-chord-label{font-size:12px;font-weight:700;fill:var(--cp-text);paint-order:stroke;stroke:var(--cp-surface);stroke-width:3.5px;stroke-linejoin:round}
 .plan-chord-label.plan-kind-told{fill:var(--cp-accent)}

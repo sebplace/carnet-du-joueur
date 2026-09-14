@@ -37,11 +37,14 @@ const TEXT = {
   linkedTo: ['lié à', 'linked to'],
   arePaired: ['sont liés par une hypothèse', 'are linked by an assumption'],
   saidSomething: ['a parlé', 'spoke about'],
-  chordAgainst: ['contre', 'against'],
-  chordNominated: ['nommé', 'nominated'],
-  chordTold: ['dit', 'says'],
-  chordPaired: ['lié', 'linked']
+  noRoleGiven: [', sans rôle précisé', ', no character named'],
+  noDetail: ['sans détail', 'no detail'],
+  arrowHint: ['La flèche va de qui parle vers qui est visé.', 'The arrow runs from who speaks to who is named.']
 };
+
+// Seuls ces liens ont un sens de lecture : quelqu un agit envers quelqu un.
+// Un conflit ou une hypothese lient deux sieges a egalite, sans direction.
+const DIRECTED = new Set(['told', 'voted', 'nominated']);
 
 const KIND_KEY = {told: 'kindTold', voted: 'kindVoted', nominated: 'kindNominated', paired: 'kindPaired', conflict: 'kindConflict'};
 const TRUST_KEY = {unknown: 'trustUnknown', trusted: 'trustTrusted', watch: 'trustWatch', suspect: 'trustSuspect'};
@@ -53,6 +56,17 @@ function esc(value) {
 }
 function kindLabel(kind, lang) { return tr(KIND_KEY[kind] || 'kindTold', lang); }
 function truncate(value, max) { const s = String(value ?? ''); return s.length > max ? `${s.slice(0, Math.max(1, max - 1))}…` : s; }
+
+// Couper au signe pres donne « serait mal… » : on recule au dernier espace
+// pour qu une note tronquee se termine sur un mot entier.
+function truncateWords(value, max) {
+  const s = String(value ?? '');
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const space = cut.lastIndexOf(' ');
+  const kept = space > max * 0.6 ? cut.slice(0, space) : cut;
+  return `${kept.replace(/[\s,;:.!?]+$/, '')}…`;
+}
 
 function pointAt(index, total, radius, center) {
   const angle = -Math.PI / 2 + (Math.PI * 2 * index / Math.max(1, total));
@@ -107,12 +121,19 @@ function seatAria(seat, claimLabel, lang) {
 }
 
 // Les etiquettes restent sur leur corde : on choisit le point du trace qui
-// n empiete sur aucune etiquette deja posee, plutot que de les deplacer au hasard.
-const LABEL_T = [0.62, 0.72, 0.52, 0.80, 0.44, 0.88];
+// n empiete ni sur un siege ni sur une etiquette deja posee, plutot que de les
+// deplacer au hasard. Les quatre dernieres valeurs sont des positions de repli,
+// utilisees seulement quand les six premieres sont toutes obstruees.
+const LABEL_T = [0.62, 0.72, 0.52, 0.80, 0.44, 0.88, 0.36, 0.67, 0.57, 0.47];
 
-function labelBox(x, y, text, font) {
-  const w = Math.max(font, 0.56 * font * String(text).length);
-  return {x: x - w / 2, y: y - font * 0.6, w, h: font * 1.2};
+// Deux liens sur une meme paire suivraient exactement la meme courbe et le
+// second disparaitrait sous le premier : on eloigne son point de controle du
+// centre pour ecarter les traces, et donc aussi leurs etiquettes.
+const SPREAD = [0, 0.34, 0.58, 0.76];
+
+function labelBox(x, y, text, font, pad = 0) {
+  const w = Math.max(font, 0.56 * font * String(text).length) + pad * 2;
+  return {x: x - w / 2, y: y - font * 0.6 - pad, w, h: font * 1.2 + pad * 2};
 }
 
 function overlapArea(a, b) {
@@ -121,16 +142,16 @@ function overlapArea(a, b) {
   return dx > 0 && dy > 0 ? dx * dy : 0;
 }
 
-function placeLabels(geom, center, font, labelOf) {
-  const placed = [];
+function placeLabels(geom, font, labelOf, obstacles) {
+  const placed = obstacles.slice();
   for (const c of geom) {
     const text = labelOf(c);
     let best = null;
     for (const t of LABEL_T) {
       const u = 1 - t;
-      const x = u * u * c.selX + 2 * u * t * center + t * t * c.otherX;
-      const y = u * u * c.selY + 2 * u * t * center + t * t * c.otherY;
-      const box = labelBox(x, y, text, font);
+      const x = u * u * c.selX + 2 * u * t * c.cx + t * t * c.otherX;
+      const y = u * u * c.selY + 2 * u * t * c.cy + t * t * c.otherY;
+      const box = labelBox(x, y, text, font, font * 0.35);
       const cost = placed.reduce((sum, p) => sum + overlapArea(box, p), 0);
       if (!best || cost < best.cost) best = {x, y, box, cost};
       if (cost === 0) break;
@@ -141,11 +162,11 @@ function placeLabels(geom, center, font, labelOf) {
   }
 }
 
-function chordGeometry(model) {
+function chordGeometry(model, center) {
   const byId = new Map(model.seats.map(s => [s.id, s]));
   const seen = new Set();
+  const rankOf = new Map();
   const out = [];
-  let index = 0;
   for (const link of model.links) {
     const a = byId.get(link.from), b = byId.get(link.to);
     if (!a || !b || a.id === b.id) continue;
@@ -153,17 +174,22 @@ function chordGeometry(model) {
     const key = `${pair}\0${link.kind}\0${(link.roleIds || []).join(',')}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    const rank = rankOf.get(pair) || 0;
+    rankOf.set(pair, rank + 1);
+    const spread = SPREAD[Math.min(rank, SPREAD.length - 1)];
+    const cx = center + ((a.x + b.x) / 2 - center) * spread;
+    const cy = center + ((a.y + b.y) / 2 - center) * spread;
     const sel = a.id === model.selectedId ? a : b;
     const other = sel === a ? b : a;
     out.push({
-      ax: a.x, ay: a.y, bx: b.x, by: b.y, lx: 0, ly: 0, kind: link.kind,
+      ax: a.x, ay: a.y, bx: b.x, by: b.y, cx, cy, lx: 0, ly: 0, kind: link.kind,
       selX: sel.x, selY: sel.y, otherX: other.x, otherY: other.y,
       selName: sel.name, otherName: other.name,
       fromName: a.name, toName: b.name,
       selIsSource: link.from === sel.id,
+      directed: DIRECTED.has(link.kind),
       roleIds: link.roleIds || [], notes: link.notes || [], label: link.label
     });
-    index++;
   }
   return out;
 }
@@ -176,14 +202,30 @@ function substance(c, roleName) {
   };
 }
 
-// Etiquette posee sur la corde : un role tient en douze signes, pas une phrase.
+// Etiquette posee sur la corde : elle dit le CONTENU du lien, jamais sa
+// categorie, que le style du trait et la legende portent deja. Un role tient
+// en douze signes. Faute de role, un propos avoue qu on ignore ce qui a ete
+// dit ; les autres liens sont des actes complets et gardent le mot exact de
+// la legende, pour qu un seul vocabulaire circule dans toute la vue.
 function chordText(c, lang, roleName) {
   const {roles} = substance(c, roleName);
   if (roles) return truncate(roles, 12);
-  if (c.kind === 'voted') return tr('chordAgainst', lang);
-  if (c.kind === 'nominated') return tr('chordNominated', lang);
-  if (c.kind === 'paired') return tr('chordPaired', lang);
-  return tr('chordTold', lang);
+  if (c.kind === 'told') return tr('noDetail', lang);
+  return truncate(kindLabel(c.kind, lang), 12);
+}
+
+// La fleche se pose juste avant le cercle vise. Pres de t=1 la courbe suit la
+// droite point de controle vers destination, donc reculer le long de cette
+// droite revient a rester sur le trace.
+function arrowPoints(c, nodeR, k) {
+  const dx = c.bx - c.cx, dy = c.by - c.cy;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const tipX = c.bx - ux * (nodeR + 2 * k), tipY = c.by - uy * (nodeR + 2 * k);
+  const back = 7 * k, wing = 3.6 * k;
+  const p1x = tipX - ux * back - uy * wing, p1y = tipY - uy * back + ux * wing;
+  const p2x = tipX - ux * back + uy * wing, p2y = tipY - uy * back - ux * wing;
+  return `${tipX.toFixed(1)},${tipY.toFixed(1)} ${p1x.toFixed(1)},${p1y.toFixed(1)} ${p2x.toFixed(1)},${p2y.toFixed(1)}`;
 }
 
 // Phrase complete : qui dit quoi de qui.
@@ -198,8 +240,8 @@ function sentence(c, lang, roleName) {
   if (c.kind === 'paired') return `${c.selName} ${and} ${c.otherName} ${tr('arePaired', lang)}`;
   if (roles) return `${source} ${tr('says', lang)} : ${subject} ${tr('is', lang)} ${roles}`;
   return lang === 'en'
-    ? `${source} ${tr('saidSomething', lang)} ${subject}`
-    : `${source} ${tr('saidSomething', lang)} ${elide(subject)}`;
+    ? `${source} ${tr('saidSomething', lang)} ${subject}${tr('noRoleGiven', lang)}`
+    : `${source} ${tr('saidSomething', lang)} ${elide(subject)}${tr('noRoleGiven', lang)}`;
 }
 
 // « de Alice » se dit « d Alice » : l elision evite la faute a chaque ligne.
@@ -218,13 +260,19 @@ export function renderPlan(model, options = {}) {
   const nameFont = Math.max(floor, nodeR * 0.5).toFixed(1);
   const markFont = (nodeR * 0.45).toFixed(1);
   const claimLabelOf = seat => seat.claimRoleIds.map(roleName).filter(Boolean).join(' / ');
-  const geom = chordGeometry(model);
+  const geom = chordGeometry(model, center);
   const labelFont = Math.max(11 * k, nodeR * 0.42);
-  placeLabels(geom, center, labelFont, c => chordText(c, lang, roleName));
+  // Les sieges sont des obstacles fixes : une etiquette posee sous un cercle
+  // est illisible, quel que soit son ecart avec les autres etiquettes.
+  const seatBoxes = model.seats.map(s => ({x: s.x - nodeR, y: s.y - nodeR, w: nodeR * 2, h: nodeR * 2}));
+  placeLabels(geom, labelFont, c => chordText(c, lang, roleName), seatBoxes);
   const chords = geom.map(c => {
-    const d = `M ${c.ax.toFixed(1)} ${c.ay.toFixed(1)} Q ${center} ${center} ${c.bx.toFixed(1)} ${c.by.toFixed(1)}`;
+    const d = `M ${c.ax.toFixed(1)} ${c.ay.toFixed(1)} Q ${c.cx.toFixed(1)} ${c.cy.toFixed(1)} ${c.bx.toFixed(1)} ${c.by.toFixed(1)}`;
     const text = chordText(c, lang, roleName);
-    return `<path class="plan-chord plan-kind-${esc(c.kind)}" data-plan-kind="${esc(c.kind)}" aria-hidden="true" fill="none" d="${d}"><title>${esc(sentence(c, lang, roleName))}</title></path>` +
+    const arrow = c.directed
+      ? `<polygon class="plan-arrow plan-kind-${esc(c.kind)}" points="${arrowPoints(c, nodeR, k)}" aria-hidden="true"></polygon>`
+      : '';
+    return `<path class="plan-chord plan-kind-${esc(c.kind)}" data-plan-kind="${esc(c.kind)}" aria-hidden="true" fill="none" d="${d}"><title>${esc(sentence(c, lang, roleName))}</title></path>${arrow}` +
       `<text class="plan-chord-label" data-plan-kind="${esc(c.kind)}" x="${c.lx.toFixed(1)}" y="${c.ly.toFixed(1)}" text-anchor="middle" style="font-size:${labelFont.toFixed(1)}px" aria-hidden="true">${esc(text)}</text>`;
   }).join('');
   const nodes = model.seats.map(seat => {
@@ -255,17 +303,20 @@ export function renderPlan(model, options = {}) {
               return `<li class="plan-link plan-kind-${esc(c.kind)}">` +
                 `<span class="plan-chip plan-kind-${esc(c.kind)}">${esc(kindLabel(c.kind, lang))}</span>` +
                 `<span class="plan-link-text">${esc(sentence(c, lang, roleName))}</span>` +
-                (fresh ? `<span class="plan-link-note">${esc(truncate(note, 90))}</span>` : '') +
+                (fresh ? `<span class="plan-link-note">${esc(truncateWords(note, 90))}</span>` : '') +
                 `</li>`;
             }).join('');
           })()}</ul>`
         : `<p class="plan-muted">${esc(tr('noLinks', lang))}</p>`)
     : `<p class="plan-muted">${esc(tr('noSelection', lang))}</p>`;
   const kindsShown = [...new Set(geom.map(c => c.kind))];
-  const legend = kindsShown.length > 1
+  const legendList = kindsShown.length > 1
     ? `<ul class="plan-legend" aria-label="${esc(tr('legend', lang))}">${kindsShown.map(kind =>
         `<li class="plan-kind-${esc(kind)}"><span class="plan-legend-line" aria-hidden="true"></span>${esc(kindLabel(kind, lang))}</li>`).join('')}</ul>`
     : '';
+  // La fleche apparait des qu un lien est oriente : il faut la decoder meme
+  // quand un seul type de trait est a l ecran et rend la legende inutile.
+  const legend = legendList + (geom.some(c => c.directed) ? `<p class="plan-arrow-hint">${esc(tr('arrowHint', lang))}</p>` : '');
   const heading = selectedSeat
     ? (lang === 'en' ? `${tr('connectionsOf', lang)} ${selectedSeat.name}` : `${tr('connectionsOf', lang)} ${elide(selectedSeat.name)}`)
     : tr('connections', lang);
