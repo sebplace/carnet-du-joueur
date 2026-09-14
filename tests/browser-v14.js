@@ -103,6 +103,31 @@ async(page)=>{
     check(!/<script/i.test(sheetHtml)&&!/https?:\/\//i.test(sheetHtml),'the printable sheet has no script and no remote resource');
     await closeDialog();
 
+    // Vue Roles : 27 capacites depliees en faisaient la vue la plus longue de l app.
+    await p.locator('#nav [data-view=script]').click();
+    await p.waitForTimeout(350);
+    check(await p.locator('.role[open]').count()===0,'the character list starts collapsed');
+    check(await p.locator('.role-group').count()>=2,'characters are grouped by team, not repeated per row');
+    check(/\d/.test(await p.locator('#role-count').innerText()),'the list states how many characters it holds');
+    check(await p.evaluate(()=>document.querySelector('#main').scrollHeight)<2600,'the character view stays under 2600px on a phone');
+    check(await p.evaluate(()=>Math.round(document.querySelector('.role>summary').getBoundingClientRect().height))>=44,'a collapsed character keeps a 44px tap target');
+    check(await p.evaluate(()=>{
+      for(const n of document.querySelectorAll('.role-name')){
+        const node=n.firstChild;if(!node)continue;
+        const txt=node.textContent;let i=0;
+        for(const mot of txt.split(' ')){
+          const r=document.createRange();r.setStart(node,i);r.setEnd(node,i+mot.length);
+          if(r.getClientRects().length>1)return false;
+          i+=mot.length+1;
+        }
+      }
+      return true;
+    }),'no character name is broken in half across two lines');
+    await p.locator('#role-search').fill('poison');
+    await p.waitForTimeout(250);
+    check(await p.locator('.role[open]').count()===await p.locator('.role').count(),'a search that narrows to a few characters opens them');
+    await p.locator('#role-search').fill('');
+
     check(errors.length===0,'no browser errors: '+errors.join(' | '));
     return {checks:checks.length,passed:checks,errors};
   }finally{await c.close();}

@@ -2,6 +2,28 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.1.0
+
+La vue Roles etait la plus longue de l application : 5040 px sur telephone,
+parce que les 27 capacites du script y etaient depliees en permanence.
+
+### La liste des roles se parcourt au lieu de se derouler
+- Chaque fiche est repliee : le nom reste scannable, la capacite est a un tap.
+- Une recherche qui ne laisse que quelques roles les ouvre d'elle meme.
+- L'equipe devient un titre de section au lieu d'etre repetee sur chacune des
+  27 lignes. Une fiche repliee tient sur une seule ligne.
+- Un compteur annonce combien de roles sont affiches.
+- Le pave « trouver d'autres scripts » est replie : il ne sert qu'a l'occasion.
+
+### Correction de fond
+- Une regle `.card{padding:20px}` du bloc mobile ecrasait le padding des fiches
+  a specificite egale et ajoutait 40 px a chacune des 27 lignes. C'est elle qui
+  rendait les colonnes si etroites que des noms simples comme « Bibliothecaire »
+  etaient coupes en deux. Corrigee par specificite.
+
+Resultat mesure sur telephone : 5040 px devient 1715 px, cible tactile de 44 px
+conservee, et aucun nom de role n'est coupe en deux entre 320 et 1280 px.
+
 ## 2.0.0
 
 Retour de test sur la 1.9 : « que signifie le dit qui apparait sur le schema ? ».
