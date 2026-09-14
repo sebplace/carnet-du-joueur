@@ -7,11 +7,11 @@ import * as investigation from './investigation.js';
  * ctx.lang: 'fr'|'en' (French default); ctx.playerName(id), ctx.roleName(id): hostile-text label helpers;
  * ctx.openPlayer(id), ctx.openRecord(recordId): optional callbacks used by explicit open buttons.
  */
-export const boardState = { lens: 'matrix', selectedPlayer: '', selectedRole: '', phase: '', query: '', linksLimit: 150 };
+export const boardState = { lens: 'timeline', selectedPlayer: '', selectedRole: '', phase: '', query: '', linksLimit: 150 };
 
-const LENSES = ['matrix', 'round', 'timeline', 'grille', 'conflits', 'links'];
-const PRIMARY_LENSES = ['matrix', 'round', 'timeline'];
-const ANALYTIC_LENSES = ['grille', 'conflits', 'links'];
+const LENSES = ['timeline', 'grille', 'conflits', 'links'];
+const PRIMARY_LENSES = ['timeline', 'grille'];
+const ANALYTIC_LENSES = ['conflits', 'links'];
 const CLUE_TYPES = new Set(['claim', 'info', 'night', 'note']);
 const PHASE_ORDER = { night: 0, day: 1 };
 const MAX_ROUND_LINKS = 90;
@@ -536,13 +536,6 @@ function controls(model) {
   </section>`;
 }
 
-function statusChips(row, lang) {
-  const chips = [row.alive ? t('alive', lang) : t('dead', lang)];
-  if (!row.alive) chips.push(row.ghost ? t('ghost', lang) : t('noGhost', lang));
-  if (row.traveller) chips.push(t('traveller', lang));
-  if (row.archived) chips.push(t('archived', lang));
-  return chips.map((c, i) => `<span class="chip ${!row.alive && i === 0 ? 'danger' : row.archived ? 'warning' : ''}">${escapeHtml(c)}</span>`).join('');
-}
 
 function neighboursHtml(neighbours, lang) {
   const left = neighbours?.left ? `#${neighbours.left.seat} ${neighbours.left.name}` : t('none', lang);
@@ -550,37 +543,9 @@ function neighboursHtml(neighbours, lang) {
   return `<span class="board-neighbours"><strong>${escapeHtml(t('currentNeighbours', lang))}</strong> <span>${escapeHtml(t('leftNeighbour', lang))}: ${escapeHtml(left)}</span> <span>${escapeHtml(t('rightNeighbour', lang))}: ${escapeHtml(right)}</span></span>`;
 }
 
-function probabilityHtml(row, lang) {
-  if (!row.probabilities.length) return `<span class="muted">${escapeHtml(t('noProbability', lang))}</span>`;
-  return `<div class="board-probs" title="${attr(t('conditional', lang))}">${row.probabilities.map(p => `<span><b>${p.percent}%</b> ${escapeHtml(p.role)}</span>`).join('')}</div>`;
-}
 
-function rowLabel(text) {
-  return `<span class="board-row-label sr-only">${escapeHtml(text)}</span>`;
-}
 
-function renderMatrix(model) {
-  const lang = model.lang, showModel = model.showModel !== false;
-  // Locked posture (showModel:false): the "model" column must leave zero trace - no header, no per-row
-  // cell, not even an empty one. Only the grid-template-columns count in board.css changes to match.
-  return `<section class="board-panel board-matrix ${showModel ? '' : 'no-model'}" aria-label="${attr(t('matrix', lang))}">
-    <div class="board-matrix-head"><span>${escapeHtml(t('tableSeat', lang))}</span><span>${escapeHtml(t('claim', lang))}</span><span>${escapeHtml(t('clues', lang))}</span><span>${escapeHtml(t('votes', lang))}/${escapeHtml(t('noms', lang))}</span>${showModel ? `<span>${escapeHtml(t('hypotheses', lang))}</span><span>${escapeHtml(t('model', lang))}</span>` : ''}</div>
-    ${model.rows.map(row => `<article class="board-row ${row.id === model.state.selectedPlayer ? 'selected' : ''} ${row.alive ? '' : 'dead'}" data-board-row="${attr(row.id)}">
-      <div class="board-seat"><button type="button" data-board-person="${attr(row.id)}" aria-label="${attr(t('selectPlayer', lang) + ' ' + row.name)}"><strong>${row.seat}</strong><span>${escapeHtml(row.name)}</span></button><div class="chips">${statusChips(row, lang)}</div>${neighboursHtml(row.neighbours, lang)}</div>
-      <div>${rowLabel(t('claim', lang))}${row.latestClaim ? `<button type="button" class="board-plain" data-board-record="${attr(row.latestClaim.id)}"><strong>${escapeHtml(row.latestClaim.roles.join(' / '))}</strong><small>${escapeHtml(row.latestClaim.text)}</small></button>` : `<span class="muted">${escapeHtml(t('noClaim', lang))}</span>`}</div>
-      <div>${rowLabel(t('clues', lang))}<span class="board-count"><b>${row.counts.cluesGiven}</b> ${escapeHtml(t('given', lang))}</span><span class="board-count"><b>${row.counts.cluesReceived}</b> ${escapeHtml(t('received', lang))}</span></div>
-      <div>${rowLabel(`${t('votes', lang)}/${t('noms', lang)}`)}<span class="board-count"><b>${row.counts.votesCast}/${row.counts.votesReceived}</b> ${escapeHtml(t('votes', lang))}</span><span class="board-count"><b>${row.counts.nominationsMade}/${row.counts.nominationsReceived}</b> ${escapeHtml(t('noms', lang))}</span></div>
-      ${showModel ? `<div>${rowLabel(t('hypotheses', lang))}<span class="board-count"><b>${row.counts.hypotheses}</b> ${escapeHtml(t('hypotheses', lang))}</span></div>` : ''}
-      ${showModel ? `<div>${rowLabel(t('model', lang))}${probabilityHtml(row, lang)}</div>` : ''}
-      <div class="board-mobile-open"><button type="button" data-board-open-player="${attr(row.id)}">${escapeHtml(t('open', lang))}</button></div>
-    </article>`).join('')}
-  </section>`;
-}
 
-function pointOnCircle(index, total, radius, center) {
-  const angle = -Math.PI / 2 + (Math.PI * 2 * index / Math.max(1, total));
-  return { x: center + Math.cos(angle) * radius, y: center + Math.sin(angle) * radius };
-}
 
 function roundLayout(total) {
   if (total >= 18) return { size: 720, center: 360, radius: 294, node: 24, showNames: false, nameChars: 0, seatFont: 16, nameFont: 0 };
@@ -596,43 +561,12 @@ function truncateLabel(value, max) {
 }
 
 const CHORD_KIND_KEY = { told: 'kindTold', voted: 'kindVoted', nominated: 'kindNominated', paired: 'kindPaired', conflict: 'kindConflict' };
-const CHORD_KIND_CHIP = { conflict: 'danger', voted: 'warning', nominated: 'warning', paired: 'accent' };
 
-function chordKindLabel(kind, lang) {
-  return t(CHORD_KIND_KEY[kind] || 'kindTold', lang) || kind;
-}
 
-// Text equivalent of the SVG chords, built from the exact same (already capped) roundLinks array so it never
 // drifts from what is drawn. Chords are decorative (aria-hidden) and unfocusable by design: making hundreds of
 // SVG paths keyboard-focusable would be worse for a screen-reader user than one <details> list they can Tab to
 // and expand once, so this <details>/<summary> (native, no ARIA needed) is the reachable equivalent instead.
-function chordListHtml(model) {
-  const lang = model.lang;
-  const items = model.roundLinks.length
-    ? `<ul>${model.roundLinks.map(link => `<li><span class="chip ${CHORD_KIND_CHIP[link.kind] || ''}">${escapeHtml(chordKindLabel(link.kind, lang))}</span> ${escapeHtml(model.peopleById[link.from]?.name || link.from)} → ${escapeHtml(model.peopleById[link.to]?.name || link.to)}${link.label && link.label !== link.kind ? ` · ${escapeHtml(link.label)}` : ''}</li>`).join('')}</ul>`
-    : `<p class="muted">${escapeHtml(t('chordListEmpty', lang))}</p>`;
-  return `<details class="board-chord-list"><summary>${escapeHtml(t('chordListLabel', lang))}</summary>${items}</details>`;
-}
 
-function renderRound(model) {
-  const lang = model.lang, layout = roundLayout(model.people.length);
-  const {size, center, radius} = layout;
-  const points = new Map(model.people.map((p, i) => [p.id, pointOnCircle(i, model.people.length, radius, center)]));
-  const selected = model.state.selectedPlayer;
-  const chords = model.roundLinks.map(link => {
-    const a = points.get(link.from), b = points.get(link.to); if (!a || !b) return '';
-    const active = !selected || link.from === selected || link.to === selected;
-    return `<path class="board-chord ${active ? 'active' : 'dim'} ${attr(link.kind)}" aria-hidden="true" d="M ${a.x.toFixed(1)} ${a.y.toFixed(1)} Q ${center} ${center} ${b.x.toFixed(1)} ${b.y.toFixed(1)}"><title>${escapeHtml(link.label || link.kind)} · ${escapeHtml(model.peopleById[link.from]?.name)} → ${escapeHtml(model.peopleById[link.to]?.name)}</title></path>`;
-  }).join('');
-  const nodes = model.people.map(p => {
-    const pt = points.get(p.id), active = !selected || p.id === selected || model.roundLinks.some(l => (l.from === selected && l.to === p.id) || (l.to === selected && l.from === p.id));
-    const n = model.neighbours[p.id] || {};
-    const title = `#${p.seat} ${p.name} · ${t('currentNeighbours', lang)}: ${t('leftNeighbour', lang)} ${n.left ? `#${n.left.seat} ${n.left.name}` : t('none', lang)}, ${t('rightNeighbour', lang)} ${n.right ? `#${n.right.seat} ${n.right.name}` : t('none', lang)}`;
-    return `<g role="button" tabindex="0" data-board-person="${attr(p.id)}" aria-label="${attr(t('selectPlayer', lang) + ' ' + p.name)}" class="board-round-node ${p.alive ? '' : 'dead'} ${p.id === selected ? 'selected' : ''} ${active ? '' : 'dim'}" transform="translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})"><title>${escapeHtml(title)}</title><circle r="${layout.node}"></circle><text y="${layout.showNames ? -3 : 5}" text-anchor="middle" style="font-size:${layout.seatFont}px">${escapeHtml(String(p.seat))}</text>${layout.showNames ? `<text y="${Math.round(layout.node * .48)}" text-anchor="middle" style="font-size:${layout.nameFont}px">${escapeHtml(truncateLabel(p.name, layout.nameChars))}</text>` : ''}</g>`;
-  }).join('');
-  const neighbourCards = activeSeatPeople(model.people).map(p => `<li><button type="button" data-board-person="${attr(p.id)}"><strong>#${p.seat} ${escapeHtml(truncateLabel(p.name, 18))}</strong>${neighboursHtml(model.neighbours[p.id], lang)}</button></li>`).join('');
-  return `<section class="board-panel"><p class="muted">${escapeHtml(t('aroundHelp', lang))}</p>${model.hidden.roundLinks ? `<p class="notice warning">${model.hidden.roundLinks} ${escapeHtml(t('hiddenLinks', lang))}</p>` : ''}<div class="board-round-wrap"><svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${attr(t('round', lang))}"><circle class="board-table-ring" cx="${center}" cy="${center}" r="${radius}"></circle>${chords}${nodes}</svg></div>${chordListHtml(model)}<ul class="board-neighbour-list" aria-label="${attr(t('currentNeighbours', lang))}">${neighbourCards}</ul></section>`;
-}
 
 function recordSummary(record, model) {
   const lang = model.lang;
@@ -738,16 +672,14 @@ function renderContradictions(model) {
 }
 
 function renderLens(model) {
-  if (model.state.lens === 'round') return renderRound(model);
-  if (model.state.lens === 'timeline') return renderTimeline(model);
   if (model.state.lens === 'grille') return renderCharacterGrid(model);
   if (model.state.lens === 'conflits') return renderContradictions(model);
   if (model.state.lens === 'links') return renderLinks(model);
-  return renderMatrix(model);
+  return renderTimeline(model);
 }
 
 export function resetBoard() {
-  Object.assign(boardState, { lens: 'matrix', selectedPlayer: '', selectedRole: '', phase: '', query: '', linksLimit: MAX_LINK_ROWS });
+  Object.assign(boardState, { lens: 'timeline', selectedPlayer: '', selectedRole: '', phase: '', query: '', linksLimit: MAX_LINK_ROWS });
 }
 
 export function renderBoard(container, ctx = {}) {
@@ -788,4 +720,7 @@ export function renderBoard(container, ctx = {}) {
   container.addEventListener('keydown', container.__boardKey);
   return model;
 }
+
+
+
 

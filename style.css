@@ -395,3 +395,75 @@ dialog[open]{animation:cp-rise .16s ease-out}
 .seat-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:10px 2px 0;padding:0;font-size:var(--fs-micro);color:var(--cp-text-muted);line-height:1.5}
 .seat-legend b{font-weight:650;color:var(--cp-text-soft)}
 
+/* — bascule Liste / Plan : sélecteur segmenté, état actif lu par forme+graisse, pas par couleur seule — */
+.shape-switch{display:inline-flex;margin:2px 0 12px;padding:3px;gap:2px;background:var(--cp-surface-soft);border:1px solid var(--cp-border-strong);border-radius:999px;box-shadow:var(--cp-shadow-soft)}
+.shape-switch button{min-height:44px;min-width:92px;padding:8px 20px;border:0;border-radius:999px;background:none;box-shadow:none;color:var(--cp-text-muted);font-weight:600;transition:background .12s,color .12s}
+.shape-switch button:hover{color:var(--cp-text)}
+.shape-switch button.active,.shape-switch button[aria-pressed="true"]{background:var(--cp-accent);color:var(--cp-accent-fg);font-weight:750;box-shadow:inset 0 0 0 1.5px var(--cp-accent-hover)}
+
+/* — le cadran : plan de table dessiné en horloge, siège 1 en haut, famille graphique du logo (anneau laiton) — */
+.plan{display:block}
+.plan-help{margin:0 2px 6px;font-size:var(--fs-caption);color:var(--cp-text-muted);line-height:1.4}
+.plan-muted{margin:6px 2px;font-size:var(--fs-caption);color:var(--cp-text-muted);line-height:1.4}
+.plan-wrap{display:flex;justify-content:center;margin:4px 0 6px}
+.plan-svg{display:block;width:100%;height:auto;min-width:320px;max-width:440px;touch-action:manipulation;overflow:visible}
+/* anneau : bezel d'horloge en laiton, ticks discrets qui rappellent le logo */
+.plan-ring{stroke:var(--cp-brass);stroke-width:2;stroke-dasharray:2 10;stroke-linecap:round;vector-effect:non-scaling-stroke;opacity:.85}
+/* sièges : cible tactile transparente (à préserver), disque parcheminé cerné, chiffre lisible */
+.plan-hit{fill:transparent;cursor:pointer}
+.plan-seat{cursor:pointer}
+.plan-disc{fill:var(--cp-surface);stroke:var(--cp-border-strong);stroke-width:1.5;vector-effect:non-scaling-stroke}
+.plan-seat-num{fill:var(--cp-text);font-weight:750;paint-order:stroke;stroke:var(--cp-surface);stroke-width:2px;stroke-linejoin:round}
+.plan-seat-name{fill:var(--cp-text-muted);font-weight:600;paint-order:stroke;stroke:var(--cp-surface);stroke-width:2px;stroke-linejoin:round}
+.plan-seat-mark{fill:var(--cp-text-soft);font-weight:600;letter-spacing:.02em;paint-order:stroke;stroke:var(--cp-surface);stroke-width:2px;stroke-linejoin:round}
+/* confiance : liseré de disque à motif distinct (plein/tiret/point) + couleur ; le glyphe (?/✓/≈/!) reste dans .plan-seat-mark → jamais la couleur seule */
+.plan-trust-trusted .plan-disc{stroke:var(--cp-success);stroke-width:2}
+.plan-trust-watch .plan-disc{stroke:var(--cp-warning);stroke-width:2;stroke-dasharray:5 3}
+.plan-trust-suspect .plan-disc{stroke:var(--cp-danger);stroke-width:2;stroke-dasharray:1.6 3;stroke-linecap:round}
+/* moi : bezel nettement plus épais (axe « poids », orthogonal aux tirets de confiance) + chiffre souligné ; reconnaissable sans couleur, en mode noms comme en mode glyphes. La teinte accent n'est qu'un renfort. */
+.plan-me .plan-disc{fill:var(--cp-accent-soft);stroke-width:4}
+.plan-me .plan-seat-num{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+/* voyageur : chiffre surligné — marque de forme au-dessus du numéro, jamais une teinte ; distincte du soulignement de « moi » */
+.plan-traveller .plan-seat-num{text-decoration:overline;text-decoration-thickness:2px}
+/* moi ET voyageur : les deux traits cohabitent (spécificité supérieure pour ne pas s'annuler) */
+.plan-me.plan-traveller .plan-seat-num{text-decoration:underline overline;text-decoration-thickness:2px;text-underline-offset:3px}
+/* mort : reste lisible (il parle et vote encore) — fond assourdi, croix + glyphe ✝, chiffre conservé plein */
+.plan-dead .plan-disc{fill:var(--cp-surface-soft)}
+.plan-dead-cross{stroke:var(--cp-text-muted);stroke-width:2;stroke-linecap:round;vector-effect:non-scaling-stroke}
+/* vote fantôme (siège mort uniquement) : texture de la croix, pas la couleur — croix pleine = vote disponible, croix rompue = vote utilisé ; vaut en mode noms comme en mode glyphes */
+.plan-ghost-available .plan-dead-cross{stroke-dasharray:none;stroke-width:2.4}
+.plan-ghost-spent .plan-dead-cross{stroke-dasharray:2.5 2.5;stroke-width:1.8}
+/* siège sélectionné : cerclé d'accent + halo doux ; c'est le seul qui émet des cordes */
+.plan-selected .plan-disc{stroke:var(--cp-accent);stroke-width:3;filter:drop-shadow(0 0 2px var(--cp-accent-soft))}
+.plan-me.plan-selected .plan-disc{stroke-width:4}
+/* mise en retrait des non-liés : atténuée mais encore lisible, jamais effacée */
+.plan-dim{opacity:.5}
+/* accès clavier (role=button tabindex=0) */
+.plan-seat:focus{outline:none}
+.plan-seat:focus-visible .plan-disc{stroke:var(--cp-accent);stroke-width:3.4}
+/* cordes : uniquement pour le siège sélectionné ; fines, distinctes par TYPE + MOTIF de tirets, jamais par la seule couleur */
+.plan-chord{fill:none;stroke-width:2;stroke-linecap:round;vector-effect:non-scaling-stroke;opacity:.95}
+.plan-chord.plan-kind-told{stroke:var(--cp-accent)}
+.plan-chord.plan-kind-voted{stroke:var(--cp-brass);stroke-dasharray:6 5}
+.plan-chord.plan-kind-nominated{stroke:var(--cp-warning);stroke-dasharray:9 4 2 4}
+.plan-chord.plan-kind-paired{stroke:var(--cp-success);stroke-dasharray:1 6}
+.plan-chord.plan-kind-conflict{stroke:var(--cp-danger);stroke-dasharray:11 6}
+/* étiquette de corde : mot du type, halo surface pour rester lisible par-dessus l'anneau */
+.plan-chord-label{font-size:12px;font-weight:650;fill:var(--cp-text);paint-order:stroke;stroke:var(--cp-surface);stroke-width:3px;stroke-linejoin:round}
+.plan-chord-label.plan-kind-told{fill:var(--cp-accent)}
+.plan-chord-label.plan-kind-voted{fill:var(--cp-brass)}
+.plan-chord-label.plan-kind-nominated{fill:var(--cp-warning)}
+.plan-chord-label.plan-kind-paired{fill:var(--cp-success)}
+.plan-chord-label.plan-kind-conflict{fill:var(--cp-danger)}
+/* panneau des liens : lecture calme sous le cadran */
+.plan-connections{margin-top:10px;padding:12px 14px;background:var(--cp-surface);border:1px solid var(--cp-border);border-radius:12px;box-shadow:var(--cp-shadow-soft)}
+.plan-connections h3{margin:0 0 8px;font-size:var(--fs-body);font-weight:700}
+.plan-link-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.plan-link-list li{display:flex;align-items:center;gap:8px;font-size:var(--fs-caption);color:var(--cp-text);line-height:1.35}
+.plan-chip{flex:0 0 auto;display:inline-flex;align-items:center;font-size:var(--fs-micro);font-weight:650;padding:2px 9px;border-radius:999px;background:var(--cp-surface);border:1px solid var(--cp-border);border-left-width:4px;color:var(--cp-text)}
+.plan-chip.plan-kind-told{color:var(--cp-accent);border-left-color:var(--cp-accent)}
+.plan-chip.plan-kind-voted{color:var(--cp-brass);border-left-color:var(--cp-brass)}
+.plan-chip.plan-kind-nominated{color:var(--cp-warning);border-left-color:var(--cp-warning)}
+.plan-chip.plan-kind-paired{color:var(--cp-success);border-left-color:var(--cp-success)}
+.plan-chip.plan-kind-conflict{color:var(--cp-danger);border-left-color:var(--cp-danger)}
+

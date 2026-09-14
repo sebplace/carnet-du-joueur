@@ -2,6 +2,18 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 1.8.0
+
+### Le cadran : voir la table, pas une liste
+- Nouvelle forme d'affichage des joueurs : le plan de table dessine comme un cadran d'horloge, siege 1 en haut, sens horaire. L'adjacence devient immediatement visible, ce qui est au coeur du raisonnement dans ce jeu : une liste verticale la cachait.
+- Les connexions ne s'affichent que pour le siege selectionne. La table ronde precedente les dessinait toutes a la fois et devenait illisible des dix joueurs.
+- Un panneau sous le cadran liste les liens du siege choisi en toutes lettres.
+- La vue Joueurs offre desormais deux formes du meme carnet : Liste pour saisir vite, Plan pour lire la situation. Le choix est memorise.
+- Etats lisibles sans percevoir les couleurs : cerne epais et chiffre souligne pour soi, chiffre surligne pour un voyageur, croix pleine ou rompue selon que le vote fantome reste disponible, motifs de tirets distincts pour la confiance accordee.
+
+### Simplification
+- Le tableau passe de six a quatre lentilles. La matrice a ete supprimee car elle repetait la liste des joueurs, et la table ronde a ete remplacee par le cadran.
+- Le code devenu inatteignable a ete supprime plutot que conserve : neuf fonctions au total.
 ## 1.7.0
 
 ### Lisibilite de la situation a l'instant T
@@ -124,4 +136,5 @@ All notable changes to Carnet du Joueur are recorded here.
 - Added local game setup, player notes, claims, events, clues and hypotheses.
 - Added bounded strict hypothesis solver for initial role assignments.
 - Added offline/PWA support and a fictional demo game.
+
 

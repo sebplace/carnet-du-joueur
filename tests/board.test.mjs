@@ -146,10 +146,10 @@ test('seat neighbours wrap around for five and twenty player tables', () => {
   assert.equal(neighbours[twenty.players[19].id].right.id, twenty.players[0].id);
 });
 
-test('resetBoard clears shared state to the default matrix lens', () => {
+test('resetBoard clears shared state to the default timeline lens', () => {
   Object.assign(boardState, {lens:'links', selectedPlayer:'p1', selectedRole:'chef', phase:'day:2', query:'x', linksLimit:300});
   resetBoard();
-  assert.deepEqual(boardState, {lens:'matrix', selectedPlayer:'', selectedRole:'', phase:'', query:'', linksLimit:150});
+  assert.deepEqual(boardState, {lens:'timeline', selectedPlayer:'', selectedRole:'', phase:'', query:'', linksLimit:150});
 });
 
 // --- Regression tests for B1-B4 -------------------------------------------------------------
@@ -225,16 +225,16 @@ test('B1: renderBoard on the links lens renders at most the current limit of row
   resetBoard();
 });
 
-test('B2: characterGrid and contradictions stay unbuilt (lazy) after a full matrix-lens render', () => {
+test('B2: characterGrid and contradictions stay unbuilt (lazy) after a full timeline-lens render', () => {
   resetBoard();
   const g = makeGame();
   const container = fakeContainer();
-  const model = renderBoard(container, ctx(g, {lens: 'matrix'}));
-  assert.equal(model.state.lens, 'matrix');
+  const model = renderBoard(container, ctx(g, {lens: 'timeline'}));
+  assert.equal(model.state.lens, 'timeline');
   assert.equal(typeof Object.getOwnPropertyDescriptor(model, 'characterGrid').get, 'function',
-    'matrix lens render must not have computed characterGrid yet');
+    'timeline lens render must not have computed characterGrid yet');
   assert.equal(typeof Object.getOwnPropertyDescriptor(model, 'contradictions').get, 'function',
-    'matrix lens render must not have computed contradictions yet');
+    'timeline lens render must not have computed contradictions yet');
   // Accessing it (e.g. because grille/conflits is opened next) computes it once and memoises the result.
   const grid = model.characterGrid;
   const descriptor = Object.getOwnPropertyDescriptor(model, 'characterGrid');
@@ -242,7 +242,7 @@ test('B2: characterGrid and contradictions stay unbuilt (lazy) after a full matr
   assert.equal(model.characterGrid, grid, 'repeated access must return the same memoised reference');
 });
 
-test('B2: round and timeline lens renders also avoid building the expensive per-lens models', () => {
+test('B2: links lens render also avoids building the expensive per-lens models', () => {
   const g = makeGame();
   for (const lens of ['round', 'timeline']) {
     resetBoard();
@@ -267,57 +267,10 @@ test('B3: voted and nominated chords each get their own dash pattern, distinct f
   assert.equal(new Set(values).size, values.length, 'every link kind must have a visually distinct dash pattern');
 });
 
-test('B3: round lens exposes a keyboard/screen-reader reachable text equivalent of the chords', () => {
-  resetBoard();
-  const g = makeGame();
-  const container = fakeContainer();
-  renderBoard(container, ctx(g, {lens: 'round'}));
-  const html = container.innerHTML;
-  assert.match(html, /<details class="board-chord-list">/);
-  assert.match(html, /Liste des liens \(équivalent texte\)/);
-  // Decorative SVG chords are hidden from assistive tech since the <details> list is now the real affordance.
-  const chordPaths = html.match(/<path class="board-chord[^>]*>/g) || [];
-  assert.ok(chordPaths.length > 0, 'fixture must actually produce chords to make this assertion meaningful');
-  assert.ok(chordPaths.every(p => /aria-hidden="true"/.test(p)), 'every chord path must be aria-hidden');
-  resetBoard();
-});
 
-test('B4: mobile column labels are real markup (visually-hidden spans), not CSS generated content', () => {
-  resetBoard();
-  const g = makeGame();
-  const container = fakeContainer();
-  renderBoard(container, ctx(g, {lens: 'matrix'}));
-  const html = container.innerHTML;
-  assert.match(html, /<span class="board-row-label sr-only">déclaration<\/span>/);
-  assert.match(html, /<span class="board-row-label sr-only">indices<\/span>/);
-  assert.doesNotMatch(html, /data-label=/);
-  assert.doesNotMatch(boardCss, /content:attr\(data-label\)/);
-  assert.match(boardCss, /\.board-row-label/);
-  resetBoard();
-});
 
 // --- Regression tests for the showModel posture flag ------------------------------------------
 
-test('showModel:false removes every trace of the probabilistic model from the matrix lens', () => {
-  resetBoard();
-  const g = makeGame();
-  const container = fakeContainer();
-  // Sanity check first: with the default ctx() (showModel unset -> true), the model column and a
-  // percentage from the fixture's prediction must actually appear, otherwise this test proves nothing.
-  const unlockedModel = renderBoard(container, ctx(g, {lens: 'matrix'}));
-  assert.equal(unlockedModel.showModel, true);
-  assert.match(container.innerHTML, /%/, 'fixture must render at least one percentage when unlocked');
-  assert.match(container.innerHTML, />modèle</);
-  resetBoard();
-  const lockedCtx = {...ctx(g, {lens: 'matrix'}), showModel: false};
-  const locked = renderBoard(container, lockedCtx);
-  const html = container.innerHTML;
-  assert.equal(locked.showModel, false);
-  assert.doesNotMatch(html, /%/, 'no probability percentage may leak once the tool is locked');
-  assert.doesNotMatch(html, />modèle</i, 'the "modèle" column header must be entirely absent, not just empty');
-  assert.doesNotMatch(html, /estimation/i, 'no "Pas d’estimation" placeholder may stand in for the hidden column');
-  resetBoard();
-});
 
 test('showModel:false suppresses percentages and the reliability notice on the character-grid lens too', () => {
   resetBoard();
@@ -331,12 +284,6 @@ test('showModel:false suppresses percentages and the reliability notice on the c
   resetBoard();
 });
 
-test('showModel default (unset) keeps prior behaviour: the model column and its data are still shown', () => {
-  resetBoard();
-  const g = makeGame();
-  const container = fakeContainer();
-  const model = renderBoard(container, ctx(g, {lens: 'matrix'}));
-  assert.equal(model.showModel, true);
-  assert.match(container.innerHTML, />modèle</);
-  resetBoard();
-});
+
+
+

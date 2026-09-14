@@ -23,39 +23,25 @@ async(page)=>{
     check(await p.evaluate(()=>Math.round(document.querySelector('#player-grid').getBoundingClientRect().top+scrollY))<520,'table grid starts high enough on a phone');
 
     await view('overview');
-    await p.locator('[data-board-row]').first().waitFor();
-    check(await p.locator('[data-board-row]').count()===7,'matrix shows every seat without pagination');
+    await p.locator('[data-board-lens]').first().waitFor();
     const lenses=await p.locator('[data-board-lens]').evaluateAll(e=>e.map(x=>x.dataset.boardLens));
-    check(lenses.join(',')==='matrix,round,timeline','three primary lenses stay reachable');
+    check(lenses.join(',')==='timeline,grille','le tableau ne garde que deux lentilles primaires');
     const analytic=await p.locator('[data-board-analytic] option').evaluateAll(o=>o.map(x=>x.value).filter(Boolean));
-    check(analytic.join(',')==='grille,conflits,links','analytical lenses live behind a secondary control');
+    check(analytic.join(',')==='conflits,links','les analyses restent derriere un controle secondaire');
+    check(!lenses.includes('matrix')&&!lenses.includes('round'),'la matrice et la table ronde ont disparu du tableau');
 
-    for(const lens of ['matrix','round','timeline','grille','conflits','links']){
-      await (['grille','conflits','links'].includes(lens)?p.locator('[data-board-analytic]').selectOption(lens):p.locator(`[data-board-lens="${lens}"]`).click());
-      await p.waitForTimeout(120);
-      check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${lens} lens has no page overflow at 390px`);
+    for(const lens of ['timeline','grille','conflits','links']){
+      await (['conflits','links'].includes(lens)?p.locator('[data-board-analytic]').selectOption(lens):p.locator(`[data-board-lens="${lens}"]`).click());
+      await p.waitForTimeout(150);
+      check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`la lentille ${lens} ne deborde pas a 390px`);
+      check((await p.locator('#board-root').innerText()).length>30,`la lentille ${lens} affiche du contenu`);
     }
 
-    await p.locator('[data-board-lens=round]').click();
-    check(await p.locator('.board-round-node').count()===7,'round table mirrors the real seating');
-    await p.locator('.board-round-node').nth(2).click();
-    const selectedId=await p.evaluate(()=>JSON.parse(document.querySelector('[data-board-selected-debug]')?.textContent||'null'));
-    check(await p.locator('.board-round-node.selected').count()===1,'selecting a seat highlights exactly one node');
-    await p.locator('[data-board-lens=matrix]').click();
-    check(await p.locator('[data-board-row].selected').count()===1,'selection is shared across lenses');
-    await p.locator('[data-board-reset]').click();
-    check(await p.locator('[data-board-row].selected').count()===0,'reset clears the shared selection');
-
     await p.locator('[data-board-query]').fill('Empathe');
-    await p.waitForTimeout(150);
-    check(await p.locator('[data-board-row]').count()>0,'query keeps a usable matrix');
+    await p.waitForTimeout(200);
+    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'la recherche du tableau ne casse pas la mise en page');
     await p.locator('[data-board-reset]').click();
-
     await p.locator('[data-board-lens=timeline]').click();
-    check((await p.locator('#board-root').innerText()).length>40,'timeline lens renders content');
-    await p.locator('[data-board-analytic]').selectOption('links');
-    check((await p.locator('#board-root').innerText()).length>40,'links lens renders content');
-    await p.locator('[data-board-lens=matrix]').click();
 
     await p.locator('main [data-action=estimate]').first().click();
     await p.locator('#confirm-action').click();
@@ -63,7 +49,10 @@ async(page)=>{
     const estimates=await p.locator('#overview-estimates').innerText();
     check(estimates.includes('Calcul complet')||estimates.includes('Estimation rapide'),'estimate method is stated in plain language');
     check(!estimates.includes('effectif efficace')&&!estimates.includes('ESS'),'statistical jargon is no longer front and centre');
-    check((await p.locator('#board-root').innerText()).includes('%'),'matrix surfaces the model result per seat');
+    await p.locator('[data-board-lens=grille]').click();
+    await p.waitForTimeout(250);
+    check((await p.locator('#board-root').innerText()).includes('%'),'la grille joueur-personnage porte le resultat du modele');
+    await p.locator('[data-board-lens=timeline]').click();
 
     await view('table');
     await viaMenu('coverage');
@@ -125,9 +114,11 @@ async(page)=>{
     await p.locator('#dialog [data-action=close]').click();
 
     check(errors.length===0,'no browser errors');
-    return {checks:checks.length,passed:checks,errors,selectedId};
+    return {checks:checks.length,passed:checks,errors};
   }finally{await c.close();}
 }
+
+
 
 
 

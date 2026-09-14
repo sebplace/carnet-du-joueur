@@ -7,6 +7,7 @@ import {RULES_COVERAGE} from './rules-coverage.js';
 import {renderBoard,resetBoard,seatNeighbours} from './board.js';
 import {whoKnows,retainedSeries,PUBLIC_AUDIENCE} from './mynotes.js';
 import {printableSheet} from './print.js';
+import {buildPlanModel,renderPlan} from './plan.js';
 import {createHistory} from './history.js';
 import {createEstimator,EstimatorSupersededError,EstimatorCancelledError} from './estimator-client.js';
 
@@ -19,6 +20,8 @@ let estimator = null;
 let explainer = null;
 let analysis = null, worker = null, requestId = '', analyzing = false, deferredInstall = null, toastTimer, returnFocus;
 let bookFilter = '', roleFilter = '', roleTeam = 'all', noteSearch = '';
+let tableShape = 'liste', planSeat = '';
+function savePrefs(){try{localStorage.setItem('botc-player-preferences',JSON.stringify({lang,theme:document.documentElement.dataset.theme,shape:tableShape}));}catch(e){console.warn(e);}}
 let prediction=null,predictionId='',predictionTimer=null,predictionBusy=false,predictionError='';
 const investigationView={person:'',phase:'',query:'',type:'all',page:0};
 const tr = (fr,en) => lang === 'fr' ? fr : en;
@@ -216,15 +219,28 @@ function renderTable() {
     </div>
     <p class="table-pulse">${tr(`${alive} en vie sur ${game.players.length}`,`${alive} alive of ${game.players.length}`)}${ghosts?` · ${tr(`${ghosts} vote(s) fantôme(s)`,`${ghosts} ghost vote(s)`)}`:''}</p>
     <div class="row quick-actions">${button('night',tr('☾ Nuit','☾ Night'))}${button('round',tr('⚖ Votes','⚖ Votes'))}${button('note',tr('✎ Note','✎ Note'))}</div>
+    <div class="shape-switch" role="group" aria-label="${tr('Forme d’affichage','Display shape')}">
+      <button type="button" data-action="shape" data-shape="liste" class="${tableShape==='liste'?'active':''}" aria-pressed="${tableShape==='liste'}">${tr('Liste','List')}</button>
+      <button type="button" data-action="shape" data-shape="plan" class="${tableShape==='plan'?'active':''}" aria-pressed="${tableShape==='plan'}">${tr('Plan','Plan')}</button>
+    </div>
     <div class="table-layout"><div>
+    ${tableShape==='plan'?`<div id="plan-root"></div>`:`
     <label class="search table-search"><span class="sr-only">${tr('Trouver un joueur','Find a player')}</span><input id="player-search" type="search" placeholder="${tr('Chercher un joueur ou un rôle…','Find a player or character…')}" value="${esc(bookFilter)}"></label>
     <div class="player-grid" id="player-grid"></div>
-    <p class="seat-legend"><span>⚡ <b>${tr('il me parle','talked to me')}</b></span><span>🗣 <b>${tr('rôle annoncé','claimed role')}</b></span><span>☠ <b>${tr('noter mort','mark dead')}</b></span><span>${tr('touche la ligne pour tout voir','tap the row for everything')}</span></p>
+    <p class="seat-legend"><span>⚡ <b>${tr('il me parle','talked to me')}</b></span><span>🗣 <b>${tr('rôle annoncé','claimed role')}</b></span><span>☠ <b>${tr('noter mort','mark dead')}</b></span><span>${tr('touche la ligne pour tout voir','tap the row for everything')}</span></p>`}
     <p class="footer-note">${tr('Confiance et soupçons sont ton appréciation, pas une vérité. Les morts continuent à jouer.','Trust and suspicion are your judgement, not truth. Dead players still play.')}</p></div>
     <aside class="table-aside"><section class="card"><h3>${tr('Derniers échanges','Recent entries')}</h3><div class="mini-timeline">${timeline(game.events.slice(-3).reverse(),true)}</div></section></aside></div>
     ${estimatesOn()?`<section class="card spaced"><h2>${tr('Démons et sbires possibles','Possible Demons and Minions')}</h2><div id="estimates-summary" aria-live="polite">${predictionSummary()}</div></section>`:''}`;
-  drawPlayers();
-  $('#player-search').oninput=e=>{bookFilter=e.target.value;drawPlayers();};
+  if(tableShape==='plan')drawPlan();
+  else{drawPlayers();$('#player-search').oninput=e=>{bookFilter=e.target.value;drawPlayers();};}
+}
+function drawPlan() {
+  const root=$('#plan-root');
+  if(!root)return;
+  try{
+    const model=buildPlanModel(game,{selectedId:planSeat,size:320});
+    root.innerHTML=renderPlan(model,{lang,roleName:rname,selectedId:planSeat,size:320});
+  }catch(e){console.error(e);root.innerHTML=`<p class="notice error">${esc(tr('Le plan n’a pas pu s’afficher : ','The plan could not render: ')+e.message)}</p>`;}
 }
 function drawPlayers() {
   const q=fold(bookFilter);
@@ -1026,9 +1042,9 @@ function openSettings() {
     <h3>${tr('Sur cet appareil','On this device')}</h3><div class="quick-actions">${game?button('export',tr('Exporter mon carnet privé (.json)','Export my private notebook (.json)')):''}${button('restore',tr('Restaurer un carnet (.json)','Restore a notebook (.json)'))}${button('backup',tr('Copies de secours et stockage','Backups and storage'))}${button('new',tr('Nouvelle partie','New game'))}${demo?button('leave-demo',tr('Quitter la démo','Leave demo')):button('demo',tr('Ouvrir la démo sans toucher au carnet','Open demo without touching notebook'))}</div>
     <h3>${tr('Installation et hors-ligne','Install and offline')}</h3><p id="offline-status" class="muted">${offlineText()}</p>${deferredInstall?button('install',tr('Installer l’application','Install app'),'primary'):''}${updateReady?button('apply-update',tr('Mettre à jour maintenant','Update now'),'primary'):''}${button('force-update',tr('Forcer la mise à jour (vider le cache)','Force update (clear cache)'))}<p class="muted">${tr('Sur iPhone : Safari → Partager → Sur l’écran d’accueil. Sur ordinateur / Android : menu du navigateur → Installer. Une première ouverture connectée est nécessaire.','On iPhone: Safari → Share → Add to Home Screen. Desktop / Android: browser menu → Install. A first online visit is required.')}</p>
     <p class="notice">${tr('Aucune donnée envoyée au Conteur ni à un service IA. Le stockage navigateur n’est pas chiffré par l’application ; le rideau masque l’écran mais ne verrouille pas l’appareil. Un export contient tes notes secrètes.','No data is sent to the Storyteller or an AI service. Browser storage is not encrypted by the app; the cover hides the screen but does not lock the device. Exports contain your secret notes.')}</p>
-    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 1.7</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
-    $('#language',d).onchange=e=>{lang=e.target.value;localStorage.setItem('botc-player-preferences',JSON.stringify({lang,theme:document.documentElement.dataset.theme}));render();openSettings();};
-    $('#theme',d).onchange=e=>{document.documentElement.dataset.theme=e.target.value;localStorage.setItem('botc-player-preferences',JSON.stringify({lang,theme:e.target.value}));};
+    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 1.8</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
+    $('#language',d).onchange=e=>{lang=e.target.value;savePrefs();render();openSettings();};
+    $('#theme',d).onchange=e=>{document.documentElement.dataset.theme=e.target.value;savePrefs();};
     $('#enrichment',d)?.addEventListener('change',e=>{try{change(g=>{g.settings.claimRoleEnrichment=e.target.checked;});}catch(err){error(err.message);}});
     $('#app-version',d).addEventListener('click',knock);
   });
@@ -1122,6 +1138,7 @@ const actions={
   'print-sheet':openPrintSheet,
   'toggle-estimates':()=>estimatesOn()?disableEstimates():requestEstimates(),
   relock,'table-menu':openTableMenu,
+  shape:el=>{tableShape=el.dataset.shape==='plan'?'plan':'liste';savePrefs();render();},
   claim:el=>openClaim(el.dataset.id),'edit-claim':el=>{const c=game.claims.find(c=>c.id===el.dataset.id);openClaim(c.playerId,c);},
   observe:el=>openObservation(el.dataset.id||''),note:()=>openObservation('','note'),
   round:()=>openRound(),night:()=>openNight(),estimate:requestEstimates,'event-influence':el=>openEventInfluence(el.dataset.id),
@@ -1151,8 +1168,16 @@ const actions={
   install:async()=>{if(!deferredInstall)return;await deferredInstall.prompt();deferredInstall=null;openSettings();}
 };
 document.addEventListener('click',async e=>{
+  const seat=e.target.closest('[data-plan-seat]');
+  if(seat){planSeat=planSeat===seat.dataset.planSeat?'':seat.dataset.planSeat;drawPlan();return;}
   const el=e.target.closest('[data-action]');if(!el)return;
   try{await actions[el.dataset.action]?.(el);}catch(err){error(err.message);}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  const seat=e.target.closest?.('[data-plan-seat]');if(!seat)return;
+  e.preventDefault();planSeat=planSeat===seat.dataset.planSeat?'':seat.dataset.planSeat;drawPlan();
+  $(`[data-plan-seat="${CSS.escape(seat.dataset.planSeat)}"]`)?.focus();
 });
 $('#settings').onclick=openSettings;$('#privacy').onclick=()=>cover(true);$('#uncover').onclick=uncover;
 $('#undo').onclick=()=>{
@@ -1181,7 +1206,7 @@ window.addEventListener('offline',()=>toast(tr('Hors ligne : le carnet reste uti
 async function init() {
   store=createStorage(localStorage);
   const prefs=localStorage.getItem('botc-player-preferences');
-  if(prefs){try{const p=JSON.parse(prefs);if(['fr','en'].includes(p.lang))lang=p.lang;if(['light','dark'].includes(p.theme))document.documentElement.dataset.theme=p.theme;}catch(e){console.warn('Invalid preferences',e);}}
+  if(prefs){try{const p=JSON.parse(prefs);if(['fr','en'].includes(p.lang))lang=p.lang;if(['light','dark'].includes(p.theme))document.documentElement.dataset.theme=p.theme;if(['liste','plan'].includes(p.shape))tableShape=p.shape;}catch(e){console.warn('Invalid preferences',e);}}
   let covered=false;try{covered=sessionStorage.getItem('botc-player-covered')==='1';}catch{}
   const response=await fetch('./data/catalogue.json');
   if(!response.ok)throw new Error(tr('Impossible de charger les rôles.','Unable to load characters.'));
@@ -1206,6 +1231,9 @@ async function init() {
   }else offlineError=tr('Ce navigateur ne permet pas le mode hors-ligne ici.','This browser cannot enable offline mode here.');
 }
 init().catch(e=>{$('#main').innerHTML=`<section class="card"><h1>${tr('Le carnet n’a pas pu s’ouvrir','The notebook could not open')}</h1><p>${esc(e.message)}</p><p>${tr('Utilise l’adresse HTTP locale fournie, pas une ouverture directe du fichier HTML. Vérifie aussi que le stockage du navigateur est autorisé.','Use the provided local HTTP address, not a direct HTML file. Check that browser storage is allowed.')}</p><button onclick="location.reload()">${tr('Réessayer','Retry')}</button></section>`;console.error(e);});
+
+
+
 
 
 
