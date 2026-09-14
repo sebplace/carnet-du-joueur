@@ -240,7 +240,21 @@ function drawPlan() {
   try{
     const model=buildPlanModel(game,{selectedId:planSeat,size:320});
     root.innerHTML=renderPlan(model,{lang,roleName:rname,selectedId:planSeat,size:320});
+    if(planSeat)keepPlanInView(root);
   }catch(e){console.error(e);root.innerHTML=`<p class="notice error">${esc(tr('Le plan n’a pas pu s’afficher : ','The plan could not render: ')+e.message)}</p>`;}
+}
+// La reponse ne sert a rien sous la ligne de flottaison : on cale le cadran et
+// ses liens dans l ecran, et seulement si le panneau depasse vraiment.
+function keepPlanInView(root) {
+  const panel=$('.plan-connections',root);
+  if(!panel||typeof panel.getBoundingClientRect!=='function')return;
+  requestAnimationFrame(()=>{
+    const box=panel.getBoundingClientRect();
+    const limit=window.innerHeight-(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h'))||150);
+    if(box.bottom<=limit)return;
+    const section=root.querySelector('.plan')||root;
+    section.scrollIntoView({block:'start',behavior:'smooth'});
+  });
 }
 function drawPlayers() {
   const q=fold(bookFilter);
@@ -1042,7 +1056,7 @@ function openSettings() {
     <h3>${tr('Sur cet appareil','On this device')}</h3><div class="quick-actions">${game?button('export',tr('Exporter mon carnet privé (.json)','Export my private notebook (.json)')):''}${button('restore',tr('Restaurer un carnet (.json)','Restore a notebook (.json)'))}${button('backup',tr('Copies de secours et stockage','Backups and storage'))}${button('new',tr('Nouvelle partie','New game'))}${demo?button('leave-demo',tr('Quitter la démo','Leave demo')):button('demo',tr('Ouvrir la démo sans toucher au carnet','Open demo without touching notebook'))}</div>
     <h3>${tr('Installation et hors-ligne','Install and offline')}</h3><p id="offline-status" class="muted">${offlineText()}</p>${deferredInstall?button('install',tr('Installer l’application','Install app'),'primary'):''}${updateReady?button('apply-update',tr('Mettre à jour maintenant','Update now'),'primary'):''}${button('force-update',tr('Forcer la mise à jour (vider le cache)','Force update (clear cache)'))}<p class="muted">${tr('Sur iPhone : Safari → Partager → Sur l’écran d’accueil. Sur ordinateur / Android : menu du navigateur → Installer. Une première ouverture connectée est nécessaire.','On iPhone: Safari → Share → Add to Home Screen. Desktop / Android: browser menu → Install. A first online visit is required.')}</p>
     <p class="notice">${tr('Aucune donnée envoyée au Conteur ni à un service IA. Le stockage navigateur n’est pas chiffré par l’application ; le rideau masque l’écran mais ne verrouille pas l’appareil. Un export contient tes notes secrètes.','No data is sent to the Storyteller or an AI service. Browser storage is not encrypted by the app; the cover hides the screen but does not lock the device. Exports contain your secret notes.')}</p>
-    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 1.8</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
+    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 1.9</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
     $('#language',d).onchange=e=>{lang=e.target.value;savePrefs();render();openSettings();};
     $('#theme',d).onchange=e=>{document.documentElement.dataset.theme=e.target.value;savePrefs();};
     $('#enrichment',d)?.addEventListener('change',e=>{try{change(g=>{g.settings.claimRoleEnrichment=e.target.checked;});}catch(err){error(err.message);}});

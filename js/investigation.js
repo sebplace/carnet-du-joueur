@@ -79,22 +79,25 @@ export function buildRelations(game) {
   const peopleIds=new Set(nodes.map(p=>p.id));
   const latestClaims=buildLastClaimIndex(game);
   const links=new Map();
-  const add=(from,to,kind,ref,label)=>{
+  const add=(from,to,kind,ref,label,detail={})=>{
     if(!from||!to||from===to||!peopleIds.has(from)||!peopleIds.has(to))return;
     const key=`${from}\0${to}\0${kind}\0${label||''}`;
-    const link=links.get(key)||{from,to,kind,weight:0,refs:[],label:label||kind};
+    const link=links.get(key)||{from,to,kind,weight:0,refs:[],label:label||kind,roleIds:[],notes:[]};
     link.weight++;
     if(ref&&!link.refs.includes(ref))link.refs.push(ref);
+    for(const roleId of detail.roleIds||[])if(roleId&&!link.roleIds.includes(roleId))link.roleIds.push(roleId);
+    const note=String(detail.note||'').trim();
+    if(note&&!link.notes.includes(note))link.notes.push(note);
     links.set(key,link);
   };
   for(const c of game.claims){
-    add(c.sourceId||c.playerId,c.playerId,'told',`claim:${c.id}`,'told');
+    add(c.sourceId||c.playerId,c.playerId,'told',`claim:${c.id}`,'told',{roleIds:c.roleIds,note:c.note});
   }
   for(const e of game.events){
     const ref=`event:${e.id}`;
-    if(e.sourceId)for(const target of e.playerIds)add(e.sourceId,target,e.type==='execution'?'nominated':'told',ref,e.type==='execution'?'nominated':'told');
+    if(e.sourceId)for(const target of e.playerIds)add(e.sourceId,target,e.type==='execution'?'nominated':'told',ref,e.type==='execution'?'nominated':'told',{roleIds:e.roleId?[e.roleId]:[],note:e.text});
     if(e.type==='execution'||e.type==='vote'){
-      for(const v of e.ballot||[])if(v.choice==='yes')for(const target of e.playerIds)add(v.playerId,target,'voted',ref,'voted yes');
+      for(const v of e.ballot||[])if(v.choice==='yes')for(const target of e.playerIds)add(v.playerId,target,'voted',ref,'voted yes',{note:e.text});
     }
   }
   const latest=[...latestClaims.values()];
@@ -103,8 +106,8 @@ export function buildRelations(game) {
     if(a.playerId===b.playerId)continue;
     const shared=a.roleIds.filter(id=>b.roleIds.includes(id));
     if(shared.length){
-      add(a.playerId,b.playerId,'conflict',`claim:${a.id}|claim:${b.id}`,shared.join(' / '));
-      add(b.playerId,a.playerId,'conflict',`claim:${a.id}|claim:${b.id}`,shared.join(' / '));
+      add(a.playerId,b.playerId,'conflict',`claim:${a.id}|claim:${b.id}`,shared.join(' / '),{roleIds:shared});
+      add(b.playerId,a.playerId,'conflict',`claim:${a.id}|claim:${b.id}`,shared.join(' / '),{roleIds:shared});
     }
   }
   const scenario=game.scenarios.find(s=>s.id===game.activeScenario);
@@ -112,8 +115,8 @@ export function buildRelations(game) {
     if(!c.enabled)continue;
     const people=c.kind==='neighbours'?seatNeighboursOf(game,c.anchor).concat(c.anchor?[c.anchor]:[]):c.players;
     for(let i=0;i<people.length;i++)for(let j=i+1;j<people.length;j++){
-      add(people[i],people[j],'paired',`relation:${c.id}`,c.note||'paired');
-      add(people[j],people[i],'paired',`relation:${c.id}`,c.note||'paired');
+      add(people[i],people[j],'paired',`relation:${c.id}`,c.note||'paired',{roleIds:c.roleIds||[],note:c.note});
+      add(people[j],people[i],'paired',`relation:${c.id}`,c.note||'paired',{roleIds:c.roleIds||[],note:c.note});
     }
   }
   return {nodes,links:[...links.values()]};

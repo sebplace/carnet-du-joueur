@@ -2,6 +2,30 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 1.9.0
+
+Retour de test sur le cadran : on ne comprenait pas au premier coup d'oeil ce qui
+avait ete communique ni ce qui causait un conflit. Les liens annoncaient leur
+categorie, jamais leur substance.
+
+### Les liens disent enfin ce qu'ils portent
+- Un conflit annonce sa cause : « Chloe et Bruno revendiquent tous deux Empathe ».
+- Une information dit qui parle de qui : « Bruno dit : Chloe est Empathe », ou
+  « Bruno a parle d'Alice » quand aucun role n'est nomme.
+- Le nom du role est resolu et traduit. Avant, l'identifiant brut du script
+  pouvait remonter jusqu'a l'ecran.
+- Ta note d'origine apparait en citation sous la phrase, et une seule fois meme
+  si plusieurs liens partagent la meme note.
+- Le titre du panneau nomme le siege choisi, avec l'elision correcte.
+
+### Lire le cadran sans mode d'emploi
+- Une legende relie chaque trait a son sens, en reprenant sa couleur et son motif.
+- Sur le cadran, l'etiquette porte le role plutot que le mot de categorie.
+- Les etiquettes ne se chevauchent plus : chacune choisit sa place sur sa propre
+  corde plutot que de se poser au meme endroit.
+- Selectionner un siege ramene le cadran et ses liens dans l'ecran. La reponse
+  n'attend plus sous la ligne de flottaison.
+- La consigne d'usage disparait une fois le siege choisi : elle a servi.
 ## 1.8.0
 
 ### Le cadran : voir la table, pas une liste

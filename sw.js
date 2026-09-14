@@ -1,4 +1,4 @@
-const CACHE='botc-player-shell-v10';
+const CACHE='botc-player-shell-v11';
 const ASSETS=['./','./index.html','./style.css','./css/board.css','./icon.svg','./logo.svg','./icon-192.png','./icon-512.png','./icon-maskable.png','./manifest.webmanifest','./guide.html','./data/catalogue.json','./js/state.js','./js/catalogue.js','./js/app.js','./js/inference.js','./js/inference-worker.js','./js/evidence.js','./js/probability.js','./js/roster.js','./js/investigation.js','./js/rules-coverage.js','./js/board.js','./js/mynotes.js','./js/print.js','./js/plan.js','./js/history.js','./js/estimator-client.js'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));

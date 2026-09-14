@@ -138,3 +138,92 @@ test('multiple chord labels are spread out, never stacked on one point', () => {
   assert.ok(labels.length >= 3, 'at least three chord labels drawn');
   assert.equal(new Set(labels).size, labels.length, 'every chord label sits at a distinct position');
 });
+
+// Sebastien, sur la 1.8 publiee : « difficile de comprendre au premier coup d'oeil
+// ce qui a ete communique ou ce qui cause le conflit ». Les liens doivent porter la
+// substance, pas seulement la categorie.
+
+function conflictGame() {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  g.claims = [
+    {id: 'c1', playerId: a.id, sourceId: a.id, roleIds: ['empath'], note: '', day: 1, phase: 'day', visibility: 'private', weight: 1},
+    {id: 'c2', playerId: b.id, sourceId: b.id, roleIds: ['empath'], note: '', day: 1, phase: 'day', visibility: 'private', weight: 1}
+  ];
+  g.events = [];
+  return validateGame(g);
+}
+
+const ROLE_NAMES = {empath: 'Empathe', chef: 'Chef'};
+
+test('12. a conflict states its cause with the resolved role name, never the raw id', () => {
+  const g = conflictGame();
+  const sel = g.players[0].id;
+  const svg = renderPlan(buildPlanModel(g, {selectedId: sel}), {lang: 'fr', roleName: id => ROLE_NAMES[id] || id, selectedId: sel});
+  assert.ok(svg.includes('revendiquent tous deux Empathe'), 'the cause of the conflict is spelled out');
+  assert.ok(!/plan-link-text[^<]*>[^<]*\bempath\b/.test(svg), 'the raw role id never reaches the reader');
+});
+
+test('13. a link without a role never fabricates "X est <verbatim>"', () => {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  g.claims = [];
+  g.events = [{id: 'e9', type: 'info', playerIds: [a.id], sourceId: b.id, roleId: '', text: 'Bruno me dit avoir recu 1.', value: '', day: 1, phase: 'day', aliveSnapshot: [], ballot: [], outcome: 'unknown', complete: false, influence: {roleIds: [], multiplier: 1, demonOnly: false, stable: false}}];
+  const game = validateGame(g);
+  const sel = a.id;
+  const svg = renderPlan(buildPlanModel(game, {selectedId: sel}), {lang: 'fr', roleName: id => ROLE_NAMES[id] || id, selectedId: sel});
+  assert.ok(!svg.includes('est Bruno me dit'), 'free text is never injected into a role sentence');
+  assert.ok(svg.includes('plan-link-note'), 'the verbatim is shown as its own secondary line');
+  assert.ok(svg.includes('Bruno me dit avoir recu 1.'), 'the verbatim itself is readable');
+});
+
+test('14. the panel names the selected seat and the legend decodes the lines', () => {
+  const g = conflictGame();
+  const sel = g.players[0].id;
+  const svg = renderPlan(buildPlanModel(g, {selectedId: sel}), {lang: 'fr', roleName: id => ROLE_NAMES[id] || id, selectedId: sel});
+  assert.ok(svg.includes('Liens d\u2019Alice'), 'the heading says whose links these are, correctly elided');
+  const single = (svg.match(/plan-legend/g) || []).length;
+  assert.equal(single, 0, 'no legend when a single kind of link is on screen');
+});
+
+test('15. French elision, because "de Alice" is a mistake repeated on every row', () => {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  g.claims = [];
+  g.events = [{id: 'e8', type: 'info', playerIds: [a.id], sourceId: b.id, roleId: '', text: 'note', value: '', day: 1, phase: 'day', aliveSnapshot: [], ballot: [], outcome: 'unknown', complete: false, influence: {roleIds: [], multiplier: 1, demonOnly: false, stable: false}}];
+  const game = validateGame(g);
+  const svg = renderPlan(buildPlanModel(game, {selectedId: a.id}), {lang: 'fr', roleName: id => id, selectedId: a.id});
+  assert.ok(svg.includes('d\u2019Alice'), 'vowel initial takes the elided form');
+  assert.ok(!svg.includes('de Alice'), 'the unelided form never appears');
+});
+
+test('16. the dial label carries the role, not a truncated sentence', () => {
+  const g = conflictGame();
+  const sel = g.players[0].id;
+  const svg = renderPlan(buildPlanModel(g, {selectedId: sel}), {lang: 'fr', roleName: id => ROLE_NAMES[id] || id, selectedId: sel});
+  const label = svg.match(/<text class="plan-chord-label"[^>]*>([^<]*)</);
+  assert.ok(label, 'a chord label is drawn');
+  assert.equal(label[1], 'Empathe');
+});
+
+
+test('17. two links on the same pair never stack their labels', () => {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloe', 'David', 'Emma']);
+  const [a, b] = g.players;
+  // Deux liens sur la meme paire : Alice parle de Bruno, puis vote contre lui.
+  g.claims = [{id: 'k3', playerId: b.id, sourceId: a.id, roleIds: ['chef'], note: '', day: 1, phase: 'day', visibility: 'private', weight: 1}];
+  g.events = [{id: 'v1', type: 'execution', playerIds: [b.id], sourceId: '', roleId: '', text: '', value: '', day: 1, phase: 'day', aliveSnapshot: [], ballot: [{playerId: a.id, choice: 'yes', weight: 1}], outcome: 'unknown', complete: false, influence: {roleIds: [], multiplier: 1, demonOnly: false, stable: false}}];
+  const game = validateGame(g);
+  const svg = renderPlan(buildPlanModel(game, {selectedId: a.id, size: 320}), {lang: 'fr', roleName: id => ROLE_NAMES[id] || id, selectedId: a.id});
+  const labels = [...svg.matchAll(/<text class="plan-chord-label"[^>]*x="([\d.]+)" y="([\d.]+)"[^>]*style="font-size:([\d.]+)px"[^>]*>([^<]*)</g)]
+    .map(m => ({x: +m[1], y: +m[2], font: +m[3], text: m[4]}));
+  assert.ok(labels.length >= 2, 'fixture produced at least two labels');
+  for (let i = 0; i < labels.length; i++) for (let j = i + 1; j < labels.length; j++) {
+    const A = labels[i], B = labels[j];
+    const wA = Math.max(A.font, 0.56 * A.font * A.text.length), wB = Math.max(B.font, 0.56 * B.font * B.text.length);
+    const dx = Math.min(A.x + wA / 2, B.x + wB / 2) - Math.max(A.x - wA / 2, B.x - wB / 2);
+    const dy = Math.min(A.y + A.font * 0.6, B.y + B.font * 0.6) - Math.max(A.y - A.font * 0.6, B.y - B.font * 0.6);
+    assert.ok(!(dx > 0 && dy > 0), `labels "${A.text}" and "${B.text}" overlap`);
+  }
+});
+

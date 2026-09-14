@@ -19,14 +19,28 @@ const TEXT = {
   noClaim: ['aucun rôle déclaré', 'no claimed character'],
   selectSeat: ['Sélectionner le siège', 'Select seat'],
   connections: ['Liens du siège sélectionné', 'Selected seat connections'],
+  connectionsOf: ['Liens', 'Connections of'],
   noSelection: ['Aucun siège sélectionné : cadran net, sans lien.', 'No seat selected: clean dial, no connections.'],
   noLinks: ['Aucun lien pour ce siège.', 'No connection for this seat.'],
   namesHidden: ['Noms masqués à ce nombre de joueurs : voir la liste et les libellés.', 'Names hidden at this player count: see the list and labels.'],
+  legend: ['Lecture des traits', 'Reading the lines'],
   kindTold: ['communiqué', 'told'],
   kindVoted: ['a voté', 'voted'],
   kindNominated: ['a nommé', 'nominated'],
   kindPaired: ['lié', 'paired'],
-  kindConflict: ['conflit', 'conflict']
+  kindConflict: ['conflit', 'conflict'],
+  says: ['dit', 'says'],
+  is: ['est', 'is'],
+  bothClaim: ['revendiquent tous deux', 'both claim'],
+  votedAgainst: ['a voté contre', 'voted against'],
+  nominatedVerb: ['a nommé', 'nominated'],
+  linkedTo: ['lié à', 'linked to'],
+  arePaired: ['sont liés par une hypothèse', 'are linked by an assumption'],
+  saidSomething: ['a parlé', 'spoke about'],
+  chordAgainst: ['contre', 'against'],
+  chordNominated: ['nommé', 'nominated'],
+  chordTold: ['dit', 'says'],
+  chordPaired: ['lié', 'linked']
 };
 
 const KIND_KEY = {told: 'kindTold', voted: 'kindVoted', nominated: 'kindNominated', paired: 'kindPaired', conflict: 'kindConflict'};
@@ -92,6 +106,41 @@ function seatAria(seat, claimLabel, lang) {
   return parts.join(' · ');
 }
 
+// Les etiquettes restent sur leur corde : on choisit le point du trace qui
+// n empiete sur aucune etiquette deja posee, plutot que de les deplacer au hasard.
+const LABEL_T = [0.62, 0.72, 0.52, 0.80, 0.44, 0.88];
+
+function labelBox(x, y, text, font) {
+  const w = Math.max(font, 0.56 * font * String(text).length);
+  return {x: x - w / 2, y: y - font * 0.6, w, h: font * 1.2};
+}
+
+function overlapArea(a, b) {
+  const dx = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const dy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return dx > 0 && dy > 0 ? dx * dy : 0;
+}
+
+function placeLabels(geom, center, font, labelOf) {
+  const placed = [];
+  for (const c of geom) {
+    const text = labelOf(c);
+    let best = null;
+    for (const t of LABEL_T) {
+      const u = 1 - t;
+      const x = u * u * c.selX + 2 * u * t * center + t * t * c.otherX;
+      const y = u * u * c.selY + 2 * u * t * center + t * t * c.otherY;
+      const box = labelBox(x, y, text, font);
+      const cost = placed.reduce((sum, p) => sum + overlapArea(box, p), 0);
+      if (!best || cost < best.cost) best = {x, y, box, cost};
+      if (cost === 0) break;
+    }
+    c.lx = best.x;
+    c.ly = best.y;
+    placed.push(best.box);
+  }
+}
+
 function chordGeometry(model) {
   const byId = new Map(model.seats.map(s => [s.id, s]));
   const seen = new Set();
@@ -101,19 +150,62 @@ function chordGeometry(model) {
     const a = byId.get(link.from), b = byId.get(link.to);
     if (!a || !b || a.id === b.id) continue;
     const pair = [a.id, b.id].sort().join('\0');
-    const key = `${pair}\0${link.kind}`;
+    const key = `${pair}\0${link.kind}\0${(link.roleIds || []).join(',')}`;
     if (seen.has(key)) continue;
     seen.add(key);
     const sel = a.id === model.selectedId ? a : b;
     const other = sel === a ? b : a;
-    const t = 0.62 + 0.08 * (index % 4);
-    const u = 1 - t;
-    const lx = u * u * sel.x + 2 * u * t * model.center + t * t * other.x;
-    const ly = u * u * sel.y + 2 * u * t * model.center + t * t * other.y;
-    out.push({ax: a.x, ay: a.y, bx: b.x, by: b.y, lx, ly, kind: link.kind, otherName: other.name, label: link.label});
+    out.push({
+      ax: a.x, ay: a.y, bx: b.x, by: b.y, lx: 0, ly: 0, kind: link.kind,
+      selX: sel.x, selY: sel.y, otherX: other.x, otherY: other.y,
+      selName: sel.name, otherName: other.name,
+      fromName: a.name, toName: b.name,
+      selIsSource: link.from === sel.id,
+      roleIds: link.roleIds || [], notes: link.notes || [], label: link.label
+    });
     index++;
   }
   return out;
+}
+
+// Ce qui EST en jeu : le role s il existe, sinon le verbatim.
+function substance(c, roleName) {
+  return {
+    roles: c.roleIds.map(roleName).filter(Boolean).join(' / '),
+    note: c.notes.find(Boolean) || ''
+  };
+}
+
+// Etiquette posee sur la corde : un role tient en douze signes, pas une phrase.
+function chordText(c, lang, roleName) {
+  const {roles} = substance(c, roleName);
+  if (roles) return truncate(roles, 12);
+  if (c.kind === 'voted') return tr('chordAgainst', lang);
+  if (c.kind === 'nominated') return tr('chordNominated', lang);
+  if (c.kind === 'paired') return tr('chordPaired', lang);
+  return tr('chordTold', lang);
+}
+
+// Phrase complete : qui dit quoi de qui.
+function sentence(c, lang, roleName) {
+  const {roles} = substance(c, roleName);
+  const and = lang === 'en' ? 'and' : 'et';
+  const source = c.selIsSource ? c.selName : c.otherName;
+  const subject = c.selIsSource ? c.otherName : c.selName;
+  if (c.kind === 'conflict') return `${c.selName} ${and} ${c.otherName} ${tr('bothClaim', lang)} ${roles}`;
+  if (c.kind === 'voted') return `${source} ${tr('votedAgainst', lang)} ${subject}`;
+  if (c.kind === 'nominated') return `${source} ${tr('nominatedVerb', lang)} ${subject}`;
+  if (c.kind === 'paired') return `${c.selName} ${and} ${c.otherName} ${tr('arePaired', lang)}`;
+  if (roles) return `${source} ${tr('says', lang)} : ${subject} ${tr('is', lang)} ${roles}`;
+  return lang === 'en'
+    ? `${source} ${tr('saidSomething', lang)} ${subject}`
+    : `${source} ${tr('saidSomething', lang)} ${elide(subject)}`;
+}
+
+// « de Alice » se dit « d Alice » : l elision evite la faute a chaque ligne.
+function elide(name) {
+  const first = String(name || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').charAt(0).toLowerCase();
+  return /[aeiouyh]/.test(first) ? `d’${name}` : `de ${name}`;
 }
 
 export function renderPlan(model, options = {}) {
@@ -127,11 +219,13 @@ export function renderPlan(model, options = {}) {
   const markFont = (nodeR * 0.45).toFixed(1);
   const claimLabelOf = seat => seat.claimRoleIds.map(roleName).filter(Boolean).join(' / ');
   const geom = chordGeometry(model);
+  const labelFont = Math.max(11 * k, nodeR * 0.42);
+  placeLabels(geom, center, labelFont, c => chordText(c, lang, roleName));
   const chords = geom.map(c => {
     const d = `M ${c.ax.toFixed(1)} ${c.ay.toFixed(1)} Q ${center} ${center} ${c.bx.toFixed(1)} ${c.by.toFixed(1)}`;
-    const title = `${kindLabel(c.kind, lang)} · ${esc(c.otherName)}`;
-    return `<path class="plan-chord plan-kind-${esc(c.kind)}" data-plan-kind="${esc(c.kind)}" aria-hidden="true" fill="none" d="${d}"><title>${title}</title></path>` +
-      `<text class="plan-chord-label" data-plan-kind="${esc(c.kind)}" x="${c.lx.toFixed(1)}" y="${c.ly.toFixed(1)}" text-anchor="middle" aria-hidden="true">${esc(kindLabel(c.kind, lang))}</text>`;
+    const text = chordText(c, lang, roleName);
+    return `<path class="plan-chord plan-kind-${esc(c.kind)}" data-plan-kind="${esc(c.kind)}" aria-hidden="true" fill="none" d="${d}"><title>${esc(sentence(c, lang, roleName))}</title></path>` +
+      `<text class="plan-chord-label" data-plan-kind="${esc(c.kind)}" x="${c.lx.toFixed(1)}" y="${c.ly.toFixed(1)}" text-anchor="middle" style="font-size:${labelFont.toFixed(1)}px" aria-hidden="true">${esc(text)}</text>`;
   }).join('');
   const nodes = model.seats.map(seat => {
     const claimLabel = claimLabelOf(seat);
@@ -149,15 +243,37 @@ export function renderPlan(model, options = {}) {
       `<text class="plan-seat-num" text-anchor="middle" dominant-baseline="central" y="${showNames ? (-nodeR * 0.28).toFixed(1) : '0'}" style="font-size:${seatFont}px">${seat.seat}</text>` +
       `${nameLine}${markers}</g>`;
   }).join('');
+  const selectedSeat = model.seats.find(s => s.id === model.selectedId);
   const listItems = model.selectedId
     ? (geom.length
-        ? `<ul class="plan-link-list">${geom.map(c => `<li><span class="plan-chip plan-kind-${esc(c.kind)}">${esc(kindLabel(c.kind, lang))}</span> ${esc(c.otherName)}${c.label && c.label !== c.kind ? ` · ${esc(c.label)}` : ''}</li>`).join('')}</ul>`
+        ? `<ul class="plan-link-list">${(() => {
+            const seenNotes = new Set();
+            return geom.map(c => {
+              const note = substance(c, roleName).note;
+              const fresh = note && c.kind !== 'conflict' && !seenNotes.has(note);
+              if (fresh) seenNotes.add(note);
+              return `<li class="plan-link plan-kind-${esc(c.kind)}">` +
+                `<span class="plan-chip plan-kind-${esc(c.kind)}">${esc(kindLabel(c.kind, lang))}</span>` +
+                `<span class="plan-link-text">${esc(sentence(c, lang, roleName))}</span>` +
+                (fresh ? `<span class="plan-link-note">${esc(truncate(note, 90))}</span>` : '') +
+                `</li>`;
+            }).join('');
+          })()}</ul>`
         : `<p class="plan-muted">${esc(tr('noLinks', lang))}</p>`)
     : `<p class="plan-muted">${esc(tr('noSelection', lang))}</p>`;
+  const kindsShown = [...new Set(geom.map(c => c.kind))];
+  const legend = kindsShown.length > 1
+    ? `<ul class="plan-legend" aria-label="${esc(tr('legend', lang))}">${kindsShown.map(kind =>
+        `<li class="plan-kind-${esc(kind)}"><span class="plan-legend-line" aria-hidden="true"></span>${esc(kindLabel(kind, lang))}</li>`).join('')}</ul>`
+    : '';
+  const heading = selectedSeat
+    ? (lang === 'en' ? `${tr('connectionsOf', lang)} ${selectedSeat.name}` : `${tr('connectionsOf', lang)} ${elide(selectedSeat.name)}`)
+    : tr('connections', lang);
   const namesNotice = showNames ? '' : `<p class="plan-muted">${esc(tr('namesHidden', lang))}</p>`;
+  const help = model.selectedId ? '' : `<p class="plan-help">${esc(tr('dialHelp', lang))}</p>`;
   return `<section class="plan" aria-label="${esc(tr('dial', lang))}">` +
-    `<p class="plan-help">${esc(tr('dialHelp', lang))}</p>${namesNotice}` +
+    `${help}${namesNotice}` +
     `<div class="plan-wrap"><svg class="plan-svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(tr('dial', lang))}">` +
     `<circle class="plan-ring" cx="${center}" cy="${center}" r="${radius.toFixed(1)}" fill="none"></circle>${chords}${nodes}</svg></div>` +
-    `<div class="plan-connections" aria-label="${esc(tr('connections', lang))}"><h3>${esc(tr('connections', lang))}</h3>${listItems}</div></section>`;
+    `<div class="plan-connections" aria-label="${esc(tr('connections', lang))}"><h3>${esc(heading)}</h3>${legend}${listItems}</div></section>`;
 }
