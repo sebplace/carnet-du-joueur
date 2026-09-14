@@ -75,14 +75,19 @@ async(page)=>{
     await p.locator('#confirm-action').click();
     check((await state()).settings.showEstimates===true,'the calculation is enabled only on explicit request');
 
-    // Analytical lenses live behind a secondary control.
+    // Deux loupes principales en boutons, les loupes analytiques dans un selecteur.
     await p.locator('#nav [data-view=overview]').click();
-    await p.locator('[data-board-analytic]').selectOption('grille');
+    check(await p.locator('[data-board-lens]').count()===2,'exactly two primary lenses are offered as buttons');
+    check(await p.locator('[data-board-analytic] option').count()===3,'the analytic select holds a neutral option plus two lenses');
+    await p.locator('[data-board-lens="grille"]').click();
     await p.waitForTimeout(250);
     check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'the character grid fits a phone');
     await p.locator('[data-board-analytic]').selectOption('conflits');
     await p.waitForTimeout(250);
     check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'the contradiction lens fits a phone');
+    await p.locator('[data-board-analytic]').selectOption('links');
+    await p.waitForTimeout(250);
+    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'the links lens fits a phone');
 
     // Printable sheet, without relying on a popup being allowed.
     await p.locator('#nav [data-view=table]').click();

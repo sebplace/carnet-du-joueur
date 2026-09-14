@@ -21,7 +21,8 @@ async (page) => {
     check(await p.locator('main [data-action=estimate]').count()===0,'aucun bouton de calcul sur la table');
 
     await p.locator('#nav [data-view=overview]').click();
-    await p.locator('[data-board-row]').first().waitFor();
+    await p.locator('#board-root .board-timeline').first().waitFor();
+    check(await p.locator('#board-root [data-board-lens][aria-selected=true]').getAttribute('data-board-lens')==='timeline','la vue Enquete ouvre sur la chronologie');
     const boardText=await p.locator('#board-root').innerText();
     check(!/estimation|%/i.test(boardText),'le tableau ne mentionne ni estimation ni pourcentage');
     check(!(await p.locator('#main').innerText()).includes('Ce que le calcul'),'la carte du calcul est absente de la vue Enquete');
