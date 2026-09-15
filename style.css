@@ -310,8 +310,8 @@ body:has(#nav:not([hidden])) #toast{bottom:calc(var(--dock-h) + 16px)}
 .skip-inline{position:absolute;left:-9999px;top:auto;display:inline-block;border:1px solid var(--cp-accent);border-radius:8px;text-decoration:none;color:var(--cp-accent);font-weight:700;font-size:var(--fs-caption)}
 .skip-inline:focus{position:static;left:auto;top:auto;margin:0 0 10px}
 #after-players:focus{outline:2px solid var(--cp-accent);outline-offset:4px}
-/* repère contentinfo : le bas d'écran porte deux barres fixes (nav + pouce), donc ce bloc vit dans le flux normal, sous le contenu, avec la place nécessaire pour ne pas finir dessous */
-.app-footer-bar{max-width:1120px;margin:0 auto;padding:4px 24px calc(var(--nav-h) + var(--safe-b) + 24px);font-size:.75rem;color:var(--cp-text-muted);text-align:center}
+/* repère contentinfo : le bas d'écran porte DEUX barres fixes, la navigation (--nav-h) et la barre du pouce (--thumb-h). Il faut dégager les deux, sinon la dernière ligne finit dessous */
+.app-footer-bar{max-width:1120px;margin:0 auto;padding:4px 24px calc(var(--nav-h) + var(--thumb-h) + var(--safe-b) + 24px);font-size:.75rem;color:var(--cp-text-muted);text-align:center}
 .app-footer-bar p{margin:4px 0}
 .app-footer-bar a{color:var(--cp-text-muted)}
 /* le corps est masqué tant que l'app n'a pas pris la main : le repère aussi */

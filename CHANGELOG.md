@@ -2,6 +2,16 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.2.1
+
+Correctif de la 2.2, trouve en verifiant le resultat publie plutot qu'en le
+supposant : la derniere ligne du repere de bas de page passait sous la barre
+du pouce. Le calcul degageait la navigation mais ignorait cette seconde barre
+fixe de 68 px.
+
+La sonde correspondante ne testait que le premier lien : elle verifie
+desormais que toutes les lignes restent lisibles.
+
 ## 2.2.0
 
 Audit complet mene sur la 2.1 : accessibilite, performance, SEO technique.

@@ -87,10 +87,19 @@ async (page) => {
     check(await p.evaluate(() => {
       const f = document.querySelector('footer');
       if (!f) return false;
-      const lien = f.querySelector('a').getBoundingClientRect();
-      const nav = document.querySelector('#nav').getBoundingClientRect();
-      return lien.top > 0 && lien.bottom < nav.top;
-    }), 'le repere de bas de page reste lisible au-dessus de la navigation');
+      const tb = document.querySelector('#thumb-bar');
+      const nav = document.querySelector('#nav');
+      // Deux barres fixes peuvent recouvrir le bas : on prend la plus haute.
+      const plafond = Math.min(
+        tb && !tb.hidden ? tb.getBoundingClientRect().top : Infinity,
+        nav.getBoundingClientRect().top
+      );
+      // TOUTES les lignes doivent etre lisibles, pas seulement la premiere.
+      return [...f.querySelectorAll('p')].every(x => {
+        const r = x.getBoundingClientRect();
+        return r.top > 0 && r.bottom <= plafond;
+      });
+    }), 'le repere de bas de page reste lisible en entier au-dessus des barres fixes');
 
     // --- Cout clavier : on doit pouvoir sauter la liste des joueurs ---
     await p.locator('body').click({position: {x: 5, y: 5}});
