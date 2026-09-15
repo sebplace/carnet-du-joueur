@@ -2,6 +2,38 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.3.0
+
+Passe de design menee avec /site. Constat mesure avant toute retouche : le
+chrome occupait 73 % de l'ecran du Tableau et 70 % de celui des Roles avant
+le premier element de contenu.
+
+### Le contenu commence plus haut
+- Les libelles decoratifs en capitales espacees au-dessus de chaque titre
+  (« RIEN NE SE PERD », « TOUT CE QUE TU AS NOTE, RELIE », …) ne disaient
+  rien d'actionnable. Retires des quatre vues.
+- L'en-tete du Tableau annoncait trois fois la meme chose : le titre de page
+  disait deja « Le tableau », et le bouton de lentille actif disait deja
+  « Chronologie ». Le doublon visuel disparait ; le niveau de titre reste
+  annonce aux lecteurs d'ecran, qui en ont besoin pour naviguer.
+- La pastille « Selection : Aucune » affichait un etat vide en permanence.
+  Elle n'apparait plus que lorsqu'une selection existe.
+- Un sous-titre masque en CSS trainait encore dans le DOM avec le jargon que
+  la 1.6 avait pourtant retire de l'affichage.
+
+Resultat mesure : Tableau 616 px devient 543 px avant le contenu, Roles
+587 devient 553, Journal 396 devient 381.
+
+### Graisses de caractere
+La feuille de style declarait huit graisses. Mesure faite au canevas, Segoe UI
+n'en rend que cinq : 650 et 750 sortent exactement comme 700, et 900 comme
+800. Ces trois valeurs ne changeaient rien a l'ecran. Supprimees, sans aucune
+difference visuelle, verifiee par capture.
+
+### Constat conserve tel quel
+La palette n'a pas ete touchee. Laiton, grenat et papier sont distinctifs et
+deja conformes AA : la retoucher aurait ete du travail pour du travail.
+
 ## 2.2.2
 
 Retrait de la mention « Rien n'est envoye », une affirmation sans objet qui

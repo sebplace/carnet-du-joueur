@@ -90,8 +90,6 @@
 .board-conflicts small{color:var(--cp-text-muted)}
 @media(max-width:900px){
   .board-panel{padding:14px;border-radius:14px}
-  .board-controls>div:first-child .eyebrow,.board-controls>div:first-child .muted{display:none}
-  .board-controls>div:first-child h2{margin:0 0 8px;font-size:1.05rem}
   .board-lens-economy{grid-template-columns:1fr;gap:8px}
   .board-lenses{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-bottom:2px}
   .board-lenses button{white-space:normal;padding:8px;min-height:44px}

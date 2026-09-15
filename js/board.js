@@ -19,7 +19,6 @@ const MAX_LINK_ROWS = 150;
 
 const TEXT = {
   title: ['Tableau d’enquête', 'Investigation board'],
-  subtitle: ['Observation ≠ preuve · probabilités conditionnelles', 'Observation ≠ proof · probabilities are conditional'],
   matrix: ['Matrice', 'Matrix'],
   round: ['Table ronde', 'Round table'],
   timeline: ['Chronologie', 'Timeline'],
@@ -520,8 +519,12 @@ function controls(model) {
     ? `${t('cellSelected', lang)}: ${selected.name} · ${selectedRole.name}${selectedCell.probability?.marginPercent != null ? ` · ${t('margin', lang)} ±${selectedCell.probability.marginPercent}%` : ''}`
     : `${t('selected', lang)}: ${selected?.name || t('none', lang)}`;
   const analyticValue = ANALYTIC_LENSES.includes(model.state.lens) ? model.state.lens : '';
+  // L en-tete disait trois fois la meme chose : le h1 de la page annonce deja
+  // « Le tableau », et le bouton de lentille actif annonce deja la lentille.
+  // Le h2 reste pour les lecteurs d ecran, qui ont besoin du niveau
+  // intermediaire pour naviguer, mais disparait a l oeil ou il faisait doublon.
   return `<section class="board-panel board-controls" aria-label="${attr(t('title', lang))}">
-    <div><p class="eyebrow">${escapeHtml(t('title', lang))}</p><h2>${escapeHtml(t(model.state.lens, lang))}</h2><p class="muted">${escapeHtml(t('subtitle', lang))}</p></div>
+    <h2 class="sr-only">${escapeHtml(t(model.state.lens, lang))}</h2>
     <div class="board-lens-economy">
       <div class="board-lenses" role="tablist" aria-label="${attr(t('title', lang))}">${PRIMARY_LENSES.map(lens => `<button type="button" role="tab" data-board-lens="${attr(lens)}" aria-selected="${model.state.lens === lens}" class="${model.state.lens === lens ? 'active' : ''}">${escapeHtml(t(lens, lang))}</button>`).join('')}</div>
       <label class="board-analytic-select">${escapeHtml(t('analytical', lang))}<select data-board-analytic aria-label="${attr(t('analytical', lang))}"><option value="">${escapeHtml(t('analytical', lang))}</option>${ANALYTIC_LENSES.map(lens => `<option value="${attr(lens)}" ${analyticValue === lens ? 'selected' : ''}>${escapeHtml(t(lens, lang))}</option>`).join('')}</select></label>
@@ -529,7 +532,7 @@ function controls(model) {
     <div class="board-filter-grid">
       <label>${escapeHtml(t('phase', lang))}<select data-board-phase><option value="">${escapeHtml(t('allGame', lang))}</option>${phaseOptions(model)}</select></label>
       <label>${escapeHtml(t('search', lang))}<input data-board-query type="search" value="${attr(model.state.query)}" placeholder="${attr(t('searchPh', lang))}"></label>
-      <div class="board-selection"><span class="chip ${selected ? 'accent' : ''}">${escapeHtml(selectedText)}</span>${selected ? `<button type="button" data-board-clear>${escapeHtml(t('clearSelection', lang))}</button>` : ''}</div>
+      ${selected ? `<div class="board-selection"><span class="chip accent">${escapeHtml(selectedText)}</span><button type="button" data-board-clear>${escapeHtml(t('clearSelection', lang))}</button></div>` : ''}
       <button type="button" data-board-reset>${escapeHtml(t('reset', lang))}</button>
     </div>
     ${model.hidden.byFilters ? `<p class="muted">${model.hidden.byFilters} ${escapeHtml(t('hiddenByFilters', lang))}</p>` : ''}

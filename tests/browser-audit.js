@@ -130,6 +130,41 @@ async (page) => {
       check(await pNo.locator('noscript').count() === 1, 'le repli vit dans une balise noscript');
     } finally { await cNo.close(); }
 
+    // --- Economie visuelle : le chrome ne doit pas manger l ecran ---
+    // Les eyebrows ALL CAPS au-dessus de chaque titre ne disaient rien
+    // d actionnable, et l en-tete du tableau repetait trois fois la meme chose.
+    for (const v of ['table', 'journal', 'overview', 'script']) {
+      await p.locator(`#nav [data-view="${v}"]`).click();
+      await p.waitForTimeout(350);
+      check(await p.locator('#main .eyebrow').count() === 0, `la vue ${v} ne porte aucun libelle decoratif en capitales`);
+    }
+    await p.locator('#nav [data-view=overview]').click();
+    await p.waitForTimeout(400);
+    const entete = await p.evaluate(() => {
+      // .sr-only est en position absolue : offsetParent ne suffit pas a le
+      // declarer invisible. On mesure la surface reellement peinte.
+      const visuel = el => {
+        const r = el.getBoundingClientRect();
+        return r.width > 1 && r.height > 1 && getComputedStyle(el).clipPath === 'none';
+      };
+      const h1 = document.querySelector('#main h1')?.textContent.trim() || '';
+      const actif = document.querySelector('[data-board-lens][aria-selected=true]')?.textContent.trim() || '';
+      const h2 = [...document.querySelectorAll('.board-controls h2')];
+      return {h1, actif, visibles: h2.filter(visuel).map(h => h.textContent.trim()), tous: h2.map(h => h.textContent.trim())};
+    });
+    check(!entete.visibles.includes(entete.actif), 'le nom de la lentille n est pas repete a l oeil sous son propre bouton');
+    check(entete.tous.includes(entete.actif), 'mais il reste annonce aux lecteurs d ecran comme titre de section');
+    check(!entete.visibles.some(t => t.includes(entete.h1)), 'le panneau ne repete pas le titre de la page');
+    check(await p.locator('.board-selection').count() === 0, 'aucune pastille de selection tant que rien n est selectionne');
+    check(await p.evaluate(() => !/probabilit/i.test(document.querySelector('#board-root')?.innerHTML || '')), 'le jargon retire de l affichage ne traine plus dans le DOM');
+
+    // --- Graisses : 650, 750 et 900 rendaient exactement comme 700 et 800 ---
+    check(await p.evaluate(() => {
+      const vues = new Set();
+      for (const el of document.querySelectorAll('*')) { if (!el.offsetParent) continue; vues.add(getComputedStyle(el).fontWeight); }
+      return [...vues].every(w => ['300', '400', '600', '700', '800'].includes(w));
+    }), 'la page n emploie que des graisses que la police rend reellement');
+
     check(errors.length === 0, 'aucune erreur navigateur: ' + errors.join(' | '));
     return {checks: checks.length, passed: checks, errors};
   } finally { await c.close(); }
