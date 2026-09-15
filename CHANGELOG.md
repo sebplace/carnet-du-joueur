@@ -2,6 +2,26 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.2.2
+
+Retrait de la mention « Rien n'est envoye », une affirmation sans objet qui
+revenait sur cinq surfaces. Une application hors ligne sans serveur n'a pas
+besoin de le repeter.
+
+Retiree de l'image de partage, des descriptions Open Graph et Twitter, du
+message affiche sans JavaScript, de la carte a montrer a la table (francais
+et anglais) et du texte pret a lire du README.
+
+Conserve volontairement : les formulations qui disent quelque chose de
+precis plutot que de proclamer une absence. « Aucune IA, aucun serveur » sur
+la carte de table, « aucun compte, aucune telemetrie, aucun envoi vers un
+modele IA » dans le guide et les reglages. Elles nomment ce qui n'a pas lieu,
+la ou la mention retiree ne nommait rien.
+
+Au passage : une sonde etait cassee depuis la 2.2.1. Un commentaire avait
+absorbe le changement de vue qui le suivait, donc six controles de la vue
+Roles s'executaient sur la mauvaise page. Corrige.
+
 ## 2.2.1
 
 Correctif de la 2.2, trouve en verifiant le resultat publie plutot qu'en le

@@ -47,7 +47,7 @@ Tout reste dans le stockage local du navigateur. Il n’y a ni compte, ni télé
 
 Tu peux lire ceci tel quel avant la partie :
 
-> J’utilise un carnet privé, comme une feuille de papier. Il ne lit rien du Conteur ni du Grimoire, n’utilise pas d’IA, n’envoie rien sur Internet et ne rend aucun verdict de règles. Si la table préfère que je joue sans téléphone, je le range.
+> J’utilise un carnet privé, comme une feuille de papier. Il ne lit rien du Conteur ni du Grimoire, n’utilise pas d’IA et ne rend aucun verdict de règles. Si la table préfère que je joue sans téléphone, je le range.
 
 ## Captures d’écran à ajouter
 
