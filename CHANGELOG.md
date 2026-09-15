@@ -2,6 +2,51 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.2.0
+
+Audit complet mene sur la 2.1 : accessibilite, performance, SEO technique.
+L'accessibilite et la performance ne demandaient presque rien (LCP 136 ms pour
+un seuil de 2500, CLS 0,0005, zero violation axe-core sur les quatre vues et
+les cinq dialogues). Le vrai manque etait ailleurs : l'application ne se
+partageait pas.
+
+### Le lien devient presentable
+- Balises Open Graph et Twitter Card completes sur la page et sur le guide :
+  titre, description, type, langue, URL, image avec ses dimensions et son
+  alternative textuelle.
+- Image de partage 1200x630 dessinee a partir de l'identite existante.
+- URL canonique declaree sur les deux pages.
+
+### Installation et indexation
+- Le manifeste porte trois captures d'ecran decrites, des categories et un
+  raccourci vers le guide.
+- robots.txt, sitemap.xml et une page 404 qui renvoie vers le carnet.
+- Le guide portait 20 000 caracteres de contenu sans la moindre description.
+
+### Sans JavaScript, la page dit enfin pourquoi
+- Elle affichait « Ouverture du carnet… » indefiniment. Elle explique
+  maintenant que tout fonctionne sur l'appareil, donc que JavaScript est
+  necessaire, et renvoie vers le guide qui se lit sans lui.
+
+### Accessibilite fine
+- Plus aucun saut de niveau de titre dans les quatre vues (WCAG 1.3.1).
+- Un repere de bas de page rassemble guide, code source et licence.
+- La liste des joueurs coutait quatre tabulations par siege, soit environ
+  quatre-vingts arrets a vingt joueurs, sans moyen de la contourner. Un lien
+  d'evitement apparait au focus et saute la liste entiere (WCAG 2.4.1).
+- Le lien de marque atteint la cible tactile de 44 px.
+
+### Constat ecarte apres verification
+- Le `theme-color` semblait incoherent avec le manifeste. Verification faite,
+  il est correctement declare avec deux media queries, clair et sombre. Rien
+  a corriger : c'etait une erreur de lecture de l'audit.
+
+### Interne
+- Le serveur de developpement ne servait ni .txt ni .xml, ce qui empechait
+  toute sonde de verifier robots.txt et sitemap.xml.
+- Nouvelle sonde tests/browser-audit.js : 40 controles qui verrouillent tout
+  ce qui precede.
+
 ## 2.1.0
 
 La vue Roles etait la plus longue de l application : 5040 px sur telephone,

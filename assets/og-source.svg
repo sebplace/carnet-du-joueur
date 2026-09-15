@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Carnet du Joueur">
+  <defs>
+    <radialGradient id="halo" cx="27%" cy="46%" r="52%">
+      <stop offset="0%" stop-color="#3d3b3a"/>
+      <stop offset="100%" stop-color="#292929"/>
+    </radialGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#b8935a"/>
+      <stop offset="100%" stop-color="#b8935a" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#halo)"/>
+
+  <!-- Le cadran, marque de l'application, a l'echelle de l'affiche -->
+  <g transform="translate(300 315) scale(2.05)">
+    <circle cx="0" cy="0" r="64" fill="none" stroke="#b8935a" stroke-width="9"/>
+    <circle cx="0" cy="0" r="55" fill="none" stroke="#b8935a" stroke-width="1.6" opacity=".55"/>
+    <g stroke="#b8935a" stroke-width="7" stroke-linecap="round">
+      <line x1="0" y1="-58" x2="0" y2="-48"/>
+      <line x1="58" y1="0" x2="48" y2="0"/>
+      <line x1="0" y1="58" x2="0" y2="48"/>
+      <line x1="-58" y1="0" x2="-48" y2="0"/>
+    </g>
+    <line x1="0" y1="-58" x2="0" y2="-48" stroke="#fd8ea1" stroke-width="7" stroke-linecap="round"/>
+    <g fill="#f0e6d2">
+      <circle cx="0" cy="-14" r="17"/>
+      <path d="M-7 -10 H7 L13 30 H-13 Z"/>
+    </g>
+  </g>
+
+  <!-- Reperes d'heure : le theme horloger sans surcharger -->
+  <g stroke="#b8935a" stroke-width="2.4" stroke-linecap="round" opacity=".32">
+    <line x1="300" y1="122" x2="300" y2="136"/>
+    <line x1="493" y1="315" x2="479" y2="315"/>
+    <line x1="300" y1="508" x2="300" y2="494"/>
+    <line x1="107" y1="315" x2="121" y2="315"/>
+  </g>
+
+  <g font-family="Georgia, 'Times New Roman', serif">
+    <text x="596" y="252" fill="#f0e6d2" font-size="86" font-weight="700" letter-spacing="-1">Carnet</text>
+    <text x="600" y="312" fill="#b8935a" font-size="34" font-weight="700" letter-spacing="9">DU JOUEUR</text>
+  </g>
+
+  <rect x="600" y="352" width="300" height="2" fill="url(#rule)"/>
+
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#cfc9c0">
+    <text x="600" y="412" font-size="29">Votre carnet privé pour</text>
+    <text x="600" y="454" font-size="29" fill="#f0e6d2">Blood on the Clocktower.</text>
+  </g>
+
+  <text x="600" y="524" font-family="Georgia, 'Times New Roman', serif" font-size="23" fill="#9a938a">Hors ligne · Français et anglais · Rien n’est envoyé</text>
+</svg>

@@ -112,7 +112,7 @@ small,.muted{color:var(--cp-text-muted)}
 .small{font-size:var(--fs-caption)}
 .eyebrow{font-size:var(--fs-micro);font-weight:700;text-transform:uppercase;letter-spacing:.19em;color:var(--cp-accent);margin-bottom:12px}
 .app-header{height:76px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(20px,calc((100vw - 1120px)/2));background:linear-gradient(var(--cp-surface),var(--cp-bg-elevated));border-bottom:1px solid var(--cp-border);box-shadow:0 1px 0 var(--cp-hairline)}
-.brand{display:flex;gap:12px;align-items:center;text-decoration:none;color:var(--cp-text);font-size:1.3rem;line-height:1.1;font-weight:650}
+.brand{display:flex;gap:12px;align-items:center;text-decoration:none;color:var(--cp-text);font-size:1.3rem;line-height:1.1;font-weight:650;min-height:44px}
 .brand small{display:block;font-size:var(--fs-micro);letter-spacing:.16em;margin-top:4px;color:var(--cp-text-soft);font-weight:700}
 .brand-seal{position:relative;width:42px;height:42px;border:1px solid var(--cp-border-strong);border-radius:50%;display:grid;place-items:center;color:transparent;font-size:0;overflow:hidden;background:radial-gradient(circle at 38% 30%,var(--cp-surface),var(--cp-bg-elevated));box-shadow:var(--cp-shadow-soft),0 0 0 3px var(--cp-accent-soft)}
 .brand-seal::before{content:"";width:30px;height:30px;background:var(--cp-accent);-webkit-mask:var(--mark) center/contain no-repeat;mask:var(--mark) center/contain no-repeat}
@@ -306,6 +306,19 @@ body:has(#nav:not([hidden])) #toast{bottom:calc(var(--dock-h) + 16px)}
 .cover-mark{width:96px;height:96px;display:block}
 .skip{position:fixed;top:-80px;left:12px;background:var(--cp-surface);padding:12px;z-index:300}
 .skip:focus{top:8px}
+/* lien d'évitement interne : la liste des joueurs coûte 4 tabulations par siège, soit ~80 arrêts à 20 joueurs. Invisible tant qu'il n'a pas le focus, comme le lien d'évitement principal */
+.skip-inline{position:absolute;left:-9999px;top:auto;display:inline-block;border:1px solid var(--cp-accent);border-radius:8px;text-decoration:none;color:var(--cp-accent);font-weight:700;font-size:var(--fs-caption)}
+.skip-inline:focus{position:static;left:auto;top:auto;margin:0 0 10px}
+#after-players:focus{outline:2px solid var(--cp-accent);outline-offset:4px}
+/* repère contentinfo : le bas d'écran porte deux barres fixes (nav + pouce), donc ce bloc vit dans le flux normal, sous le contenu, avec la place nécessaire pour ne pas finir dessous */
+.app-footer-bar{max-width:1120px;margin:0 auto;padding:4px 24px calc(var(--nav-h) + var(--safe-b) + 24px);font-size:.75rem;color:var(--cp-text-muted);text-align:center}
+.app-footer-bar p{margin:4px 0}
+.app-footer-bar a{color:var(--cp-text-muted)}
+/* le corps est masqué tant que l'app n'a pas pris la main : le repère aussi */
+body:has(#nav[hidden]) .app-footer-bar{display:none}
+/* message affiché quand JavaScript est coupé : le carnet ne peut pas s'ouvrir, autant le dire clairement */
+.noscript-notice{max-width:640px;margin:8vh auto;padding:24px;background:var(--cp-surface);border:1px solid var(--cp-border);border-radius:12px;line-height:var(--lh-body)}
+.noscript-notice h2{margin:0 0 12px}
 .loading{text-align:center;padding-top:20vh}
 .footer-note{font-size:.75rem;color:var(--cp-text-muted);margin:32px 0 0}
 .nowrap{white-space:nowrap}

@@ -103,8 +103,7 @@ async(page)=>{
     check(!/<script/i.test(sheetHtml)&&!/https?:\/\//i.test(sheetHtml),'the printable sheet has no script and no remote resource');
     await closeDialog();
 
-    // Vue Roles : 27 capacites depliees en faisaient la vue la plus longue de l app.
-    await p.locator('#nav [data-view=script]').click();
+    // Vue Roles : 27 capacites depliees en faisaient la vue la plus longue de l app.    await p.locator('#nav [data-view=script]').click();
     await p.waitForTimeout(350);
     check(await p.locator('.role[open]').count()===0,'the character list starts collapsed');
     check(await p.locator('.role-group').count()>=2,'characters are grouped by team, not repeated per row');

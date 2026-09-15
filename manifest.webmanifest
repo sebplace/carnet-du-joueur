@@ -6,13 +6,77 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "lang": "fr",
+  "dir": "ltr",
+  "categories": [
+    "games",
+    "utilities",
+    "productivity"
+  ],
   "background_color": "#292929",
   "theme_color": "#292929",
   "icons": [
-    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
-    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
-    {"src":"icon-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"},
-    {"src":"icon.svg","sizes":"any","type":"image/svg+xml"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/shot-mobile-table.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "La liste des joueurs et ce que chacun a déclaré."
+    },
+    {
+      "src": "assets/shot-mobile-plan.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Le cadran : les sièges en cercle et les liens entre eux."
+    },
+    {
+      "src": "assets/shot-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Le carnet sur grand écran, liste et derniers échanges côte à côte."
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Guide d’utilisation",
+      "short_name": "Guide",
+      "description": "Ce que le carnet fait, ce qu’il ne fait pas.",
+      "url": "./guide.html",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sebplace.github.io/carnet-du-joueur/sitemap.xml
