@@ -81,6 +81,8 @@ const TEXT = {
   kindPaired: ['hypothèse liée', 'paired hypothesis'],
   kindConflict: ['conflit', 'conflict'],
   noRecords: ['Aucune information ne correspond aux filtres.', 'No record matches the filters.'],
+  noRecordsYet: ['Rien de noté pour l’instant. Ce que tu notes depuis la table apparaît ici, classé par jour.', 'Nothing noted yet. What you note from the table appears here, sorted by day.'],
+  goTable: ['Aller à la table', 'Go to the table'],
   aroundHelp: ['Les cordes sont des observations notées, jamais une preuve. Les voisins suivent l’ordre réel des sièges.', 'Chords are recorded observations, never proof. Neighbours follow true seat order.'],
   chronologicalHelp: ['Toutes les informations datées restent visibles, groupées par nuit et jour.', 'All dated records stay visible, grouped by night and day.'],
   derivationHelp: ['Détail source → information → modèle. Cette vue peut défiler horizontalement.', 'Source → record → model detail. This view may scroll horizontally.'],
@@ -593,7 +595,15 @@ function renderTimeline(model) {
   return `<section class="board-panel"><p class="muted">${escapeHtml(t('chronologicalHelp', lang))}</p><div class="board-timeline">${dated.length ? [...groups].map(([key, records]) => {
     const [phase, day] = key.split(':');
     return `<section class="board-phase"><h3>${escapeHtml(phaseLabel({phase, day}, lang))}</h3>${records.map(r => { const s = recordSummary(r, model); return `<button type="button" data-board-record="${attr(r.id)}" class="board-event"><small>${escapeHtml(recordTypeLabel(r.type, lang))} · ${escapeHtml(s.people)}</small><span>${escapeHtml(s.text || r.text)}</span></button>`; }).join('')}</section>`;
-  }).join('') : `<p class="empty">${escapeHtml(t('noRecords', lang))}</p>`}</div></section>`;
+  }).join('') : emptyTimeline(model, lang)}</div></section>`;
+}
+
+// Un carnet vierge n'est pas un carnet filtre : dire « aucun résultat pour ces filtres »
+// à quelqu'un qui n'a rien noté laisse croire qu'il a mal réglé quelque chose.
+function emptyTimeline(model, lang) {
+  const blank = !(model.graph?.records?.length);
+  if (!blank) return `<p class="empty">${escapeHtml(t('noRecords', lang))}</p>`;
+  return `<div class="empty"><p>${escapeHtml(t('noRecordsYet', lang))}</p><button type="button" data-action="view" data-view="table">${escapeHtml(t('goTable', lang))}</button></div>`;
 }
 
 // Exported so tests can assert the cap without a DOM: with 20 players / 480 events this used to enumerate

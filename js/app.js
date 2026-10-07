@@ -188,7 +188,7 @@ function render() {
   if(view==='worlds'&&!unlocked())view='table';
   const nav=[['table','◎','Joueurs','Players'],['overview','⌘','Tableau','Board'],['journal','≡','Journal','Log'],...(unlocked()?[['worlds','◇','Hypothèses','Hypotheses']]:[]),['script','▤','Rôles','Characters']];
   $('#nav').innerHTML=nav.map(([id,icon,fr,en])=>`<button data-action="view" data-view="${id}" class="${view===id?'active':''}" aria-current="${view===id?'page':'false'}"><span class="nav-icon" aria-hidden="true">${icon}</span>${tr(fr,en)}</button>`).join('');
-  $('#thumb-bar').innerHTML=`${button('express',tr('⚡ Noter','⚡ Capture'),'primary thumb-main')}<button type="button" class="icon-button thumb-hide" data-action="mask" aria-label="${tr('Masquer l’écran','Hide screen')}" title="${tr('Masquer l’écran','Hide screen')}">◐</button>`;
+  $('#thumb-bar').innerHTML=`${button('express',tr('⚡ Il me parle','⚡ Talks to me'),'primary thumb-main')}<button type="button" class="icon-button thumb-hide" data-action="mask" aria-label="${tr('Masquer l’écran','Hide screen')}" title="${tr('Masquer l’écran','Hide screen')}">◐</button>`;
   ({table:renderTable,overview:renderOverview,journal:renderJournal,worlds:renderWorlds,script:renderScript}[view])();
 }
 function renderWelcome() {
@@ -223,12 +223,16 @@ function renderTable() {
       <button type="button" data-action="shape" data-shape="liste" class="${tableShape==='liste'?'active':''}" aria-pressed="${tableShape==='liste'}">${tr('Liste','List')}</button>
       <button type="button" data-action="shape" data-shape="plan" class="${tableShape==='plan'?'active':''}" aria-pressed="${tableShape==='plan'}">${tr('Plan','Plan')}</button>
     </div>
+    ${firstStepsHtml()}
     <div class="table-layout"><div>
     ${tableShape==='plan'?`<div id="plan-root"></div>`:`
-    <label class="search table-search"><span class="sr-only">${tr('Trouver un joueur','Find a player')}</span><input id="player-search" type="search" placeholder="${tr('Chercher un joueur ou un rôle…','Find a player or character…')}" value="${esc(bookFilter)}"></label>
+    <div class="seat-toolbar">
+      <label class="search table-search"><span class="sr-only">${tr('Trouver un joueur','Find a player')}</span><input id="player-search" type="search" placeholder="${tr('Joueur ou rôle…','Player or character…')}" value="${esc(bookFilter)}"></label>
+      <div class="seat-cols" aria-hidden="true"><span><i>⚡</i>${tr('Parle','Talks')}</span><span><i>🗣</i>${tr('Rôle','Role')}</span><span><i>☠</i>${tr('Mort','Dead')}</span></div>
+    </div>
     <a class="skip skip-inline" href="#after-players">${tr('Passer la liste des joueurs','Skip the player list')}</a>
     <div class="player-grid" id="player-grid"></div>
-    <p class="seat-legend" id="after-players" tabindex="-1"><span>⚡ <b>${tr('il me parle','talked to me')}</b></span><span>🗣 <b>${tr('rôle annoncé','claimed role')}</b></span><span>☠ <b>${tr('noter mort','mark dead')}</b></span><span>${tr('touche la ligne pour tout voir','tap the row for everything')}</span></p>`}
+    <p class="seat-legend" id="after-players" tabindex="-1">${tr('Touche une ligne pour tout voir sur ce joueur.','Tap a row to see everything about that player.')}</p>`}
     <p class="footer-note">${tr('Confiance et soupçons sont ton appréciation, pas une vérité. Les morts continuent à jouer.','Trust and suspicion are your judgement, not truth. Dead players still play.')}</p></div>
     <aside class="table-aside"><section class="card"><h2>${tr('Derniers échanges','Recent entries')}</h2><div class="mini-timeline">${timeline(game.events.slice(-3).reverse(),true)}</div></section></aside></div>
     ${estimatesOn()?`<section class="card spaced"><h2>${tr('Démons et sbires possibles','Possible Demons and Minions')}</h2><div id="estimates-summary" aria-live="polite">${predictionSummary()}</div></section>`:''}`;
@@ -273,9 +277,9 @@ function drawPlayers() {
         <span data-compact-estimate="${p.id}">${compactPrediction(p.id)}</span>
       </button>
       <div class="seat-actions">
-        ${button('express','⚡','seat-act',`data-id="${p.id}" aria-label="${esc(tr('Noter ce que dit ','Note what ')+p.name+tr('','  says'))}" title="${tr('Il me parle','Talked to me')}"`)}
-        ${button('claim','🗣','seat-act',`data-id="${p.id}" aria-label="${esc(tr('Rôle annoncé par ','Character claimed by ')+p.name)}" title="${tr('Rôle annoncé','Claimed character')}"`)}
-        ${button('life',p.alive?'☠':'✚','seat-act',`data-id="${p.id}" aria-label="${esc((p.alive?tr('Noter la mort de ','Mark dead: '):tr('Noter vivant : ','Mark alive: '))+p.name)}" title="${p.alive?tr('Noter mort','Mark dead'):tr('Noter vivant','Mark alive')}"`)}
+        ${button('express','⚡','seat-act',`data-id="${p.id}" aria-label="${esc(tr('Il me parle : noter ce que dit ','Talks to me: note what ')+p.name+tr('',' says'))}" title="${tr('Il me parle','Talks to me')}"`)}
+        ${button('claim','🗣','seat-act',`data-id="${p.id}" aria-label="${esc(tr('Rôle annoncé : noter le rôle que ','Claimed character: note the character ')+p.name+tr(' annonce',' claims'))}" title="${tr('Rôle annoncé','Claimed character')}"`)}
+        ${button('life',p.alive?'☠':'✚','seat-act',`data-id="${p.id}" aria-label="${esc((p.alive?tr('Mort : noter la mort de ','Dead: mark dead '):tr('Vivant : noter le retour en vie de ','Alive: mark alive '))+p.name)}" title="${p.alive?tr('Mort','Dead'):tr('Vivant','Alive')}"`)}
       </div></article>`;
   }).join('') || `<p class="empty">${tr('Aucun joueur trouvé.','No player found.')}</p>`;
 }
@@ -627,7 +631,6 @@ function openNew(imported=null) {
       const form=new FormData(e.target);const names=String(form.get('names')).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
       const s=imported || {...scripts.find(s=>s.id===form.get('script')),customRoles:[],warnings:[]};
       replaceGame(newGame({name:s.name,roleIds:s.roleIds,customRoles:s.customRoles||[],warnings:s.warnings||[]},names,String(form.get('title')).trim()));
-      if(!localStorage.getItem('botc-player-onboarded')){localStorage.setItem('botc-player-onboarded','1');openOnboarding();}
     }catch(err){error(err.message);}};
   });
 }
@@ -693,7 +696,7 @@ function neighbourLabel(id) {
   return left||right?`${esc(left||'?')} ← → ${esc(right||'?')}`:tr('inconnus','unknown');
 }
 function openExpress(id='') {
-  open(tr('Saisie rapide','Quick entry'),`<p class="notice">${tr('Tout est facultatif. Enregistre même si tu n’as qu’un morceau : tu compléteras plus tard.','Everything is optional. Save even a fragment: you can complete it later.')}</p>
+  open(tr('Il me parle','Talks to me'),`<p class="notice">${tr('Tout est facultatif. Enregistre même si tu n’as qu’un morceau : tu compléteras plus tard.','Everything is optional. Save even a fragment: you can complete it later.')}</p>
     <form id="express-form">
     <label>${tr('Qui te parle ?','Who is talking to you?')}<select name="source">${playerOptions(id||'',true)}</select></label>
     <details ${id?'open':''}><summary>${tr('Il annonce un ou plusieurs rôles','They claim one or more characters')}</summary><div id="express-roles"></div></details>
@@ -736,6 +739,7 @@ function openTableMenu() {
     ${menuItem('roster','👥','Corriger la liste des joueurs','Fix the player list','Renommer, changer l’ordre des sièges, retirer ou remettre quelqu’un.','Rename, reorder seats, remove or restore someone.')}
     ${menuItem('mynotes','🕮','Ce que moi j’ai annoncé','What I claimed myself','Garder trace de mes propres versions, à qui je les ai dites, et des infos à retenir pour plus tard.','Track my own versions, who I told, and information to remember for later.')}
     ${menuItem('table-card','☉','Rassurer la table','Reassure the table','Un texte à montrer si quelqu’un s’inquiète de ce que tu fais sur ton téléphone.','A text to show if someone worries about what you are doing on your phone.')}
+    ${menuItem('glossary','📖','Vocabulaire','Vocabulary','Le sens des mots et des boutons du carnet : siège, indice, déclaration, ⚡.','What the notebook’s words and buttons mean: seat, clue, claim, ⚡.')}
     ${menuItem('print-sheet','🖶','Imprimer une feuille','Print a sheet','Une version papier vierge, adaptée au nombre de joueurs, si tu préfères ranger le téléphone.','A blank paper version sized to your table, if you would rather put the phone away.')}
     ${menuItem('endgame','⌛','Récapitulatif de fin','Endgame recap','À la dernière journée : qui est vivant, combien de votes restent, ce qui peut changer l’issue.','On the last day: who is alive, how many votes remain, what can change the outcome.')}
     ${menuItem('coverage','⚠','Ce que le carnet ne fait pas','What the notebook does not do','Ses limites honnêtes : il ne simule pas le jeu et ne tranche aucune règle.','Its honest limits: it does not simulate the game and settles no rule.')}
@@ -757,14 +761,54 @@ function openTableCard() {
     ${unlocked()&&estimatesOn()?`<div class="row">${button('toggle-estimates',tr('Couper l’aide','Switch the aid off'))}</div>`:''}`);
 }
 function openOnboarding() {
-  open(tr('Soixante secondes avant le jour 1','Sixty seconds before day one'),`
+  open(tr('Comment ça marche','How it works'),`
     <ol class="onboarding">
       <li><strong>${tr('Préviens ta table.','Tell your table.')}</strong><br>${tr('Une phrase suffit : « je prends des notes sur mon téléphone, comme sur papier ».','One sentence is enough: "I take notes on my phone, like on paper."')} ${button('table-card',tr('Carte à montrer','Card to show'))}</li>
       <li><strong>${tr('Entre les joueurs dans l’ordre des sièges.','Enter the players in seating order.')}</strong><br>${tr('Le premier siège, c’est toi. Tu pourras tout corriger en cours de partie.','The first seat is you. You can correct everything mid-game.')}</li>
-      <li><strong>${tr('Ton premier geste en partie.','Your first move in play.')}</strong><br>${tr('« Me parle » sur la carte d’un joueur, puis tu notes ce qu’il dit. Enregistre même si c’est incomplet.','"Talked to me" on a player card, then note what they say. Save even if incomplete.')}</li>
+      <li><strong>${tr('Quand un joueur te parle, touche ⚡ sur sa ligne.','When a player talks to you, tap ⚡ on their row.')}</strong><br>${tr('Note ses mots, même incomplets. 🗣 sert à noter le rôle qu’il annonce, ☠ à noter une mort.','Note their words, even incomplete. 🗣 records the character they claim, ☠ records a death.')}</li>
       <li><strong>${tr('Reste dans la conversation.','Stay in the conversation.')}</strong><br>${tr('Le carnet sert à se souvenir, pas à réfléchir à ta place. Note vite, relève la tête, écoute.','The notebook is for remembering, not for thinking in your place. Note fast, look up, listen.')}</li>
     </ol>
-    <div class="dialog-footer">${button('close',tr('Je suis à table, aller vite','I am at the table, go fast'),'primary')}</div>`);
+    <div class="dialog-footer">${button('glossary',tr('Vocabulaire','Vocabulary'))}${button('close',tr('Compris','Got it'),'primary')}</div>`);
+}
+// Les mots que l'application emploie, dans l'ordre ou un nouveau joueur les rencontre.
+function openGlossary() {
+  const entries=list=>`<dl class="glossary">${list.map(([term,def])=>`<dt>${term}</dt><dd>${def}</dd>`).join('')}</dl>`;
+  open(tr('Vocabulaire','Vocabulary'),`
+    <h3 class="glossary-title">${tr('Les trois boutons de chaque joueur','The three buttons on each player')}</h3>
+    ${entries([
+      [tr('⚡ Il me parle','⚡ Talks to me'),tr('Un joueur te dit quelque chose. Note ses mots tels quels, même incomplets. Le grand bouton du bas fait la même chose et te laisse choisir le joueur.','A player tells you something. Note their words as they are, even incomplete. The big button at the bottom does the same and lets you pick the player.')],
+      [tr('🗣 Rôle annoncé','🗣 Claimed character'),tr('Un joueur dit quel est son rôle. Ce n’est pas une preuve : il peut se tromper ou mentir.','A player says which character they are. That is not proof: they may be mistaken or lying.')],
+      [tr('☠ Mort et ✚ Vivant','☠ Dead and ✚ Alive'),tr('Noter qu’un joueur est mort, ou qu’il est revenu en vie. Un joueur mort reste à la table : il peut parler et garde un vote, utilisable une seule fois.','Record that a player died, or came back to life. A dead player stays at the table: they can talk and keep one vote, usable once.')]
+    ])}
+    <h3 class="glossary-title">${tr('Les mots de la partie','Words from the game')}</h3>
+    ${entries([
+      [tr('Conteur','Storyteller'),tr('La personne qui anime la partie et connaît tous les secrets. Elle tranche les règles, jamais ce carnet.','The person who runs the game and knows every secret. They settle the rules, never this notebook.')],
+      [tr('Grimoire','Grimoire'),tr('Le plateau secret du Conteur, avec les vrais rôles de chacun. Ce carnet ne le voit jamais.','The Storyteller’s secret board, with everyone’s real character. This notebook never sees it.')],
+      [tr('Siège','Seat'),tr('Ta place autour de la table. Les sièges sont numérotés dans l’ordre, et le premier, c’est toi.','Your place around the table. Seats are numbered in order, and the first one is you.')],
+      [tr('Script','Script'),tr('La liste des rôles qui peuvent apparaître dans cette partie. Ce n’est pas la liste des rôles distribués.','The list of characters that may appear in this game. It is not the list of characters actually dealt.')],
+      [tr('Déclaration','Claim'),tr('Un rôle annoncé par un joueur, tel que tu l’as noté. Le Journal les range sous ce nom.','A character announced by a player, as you noted it. The Journal files them under this name.')],
+      [tr('Indice','Clue'),tr('Une information reçue : un chiffre, un nom, une phrase. Ce que tu notes avec ⚡ devient un indice, ou une déclaration si tu y ajoutes un rôle.','A piece of information received: a number, a name, a sentence. What you note with ⚡ becomes a clue, or a claim if you add a character.')],
+      [tr('Exécution','Execution'),tr('Le vote de fin de journée qui peut éliminer un joueur. Le bouton Votes sert à le noter.','The end-of-day vote that can eliminate a player. The Votes button records it.')],
+      [tr('Nuit','Night'),tr('Le bouton Nuit sert à noter les morts annoncées au matin.','The Night button records the deaths announced in the morning.')],
+      [tr('Jour 1 ›','Day 1 ›'),tr('Le moment de la partie. Touche-le pour passer au jour ou à la nuit suivants.','The current moment of the game. Tap it to move to the next day or night.')]
+    ])}
+    <h3 class="glossary-title">${tr('Les écrans','The screens')}</h3>
+    ${entries([
+      [tr('Joueurs','Players'),tr('La table : une ligne par joueur. Le Plan montre les mêmes sièges en cercle, et un siège touché révèle ses liens.','The table: one row per player. The Plan shows the same seats in a circle, and a tapped seat reveals its links.')],
+      [tr('Tableau','Board'),tr('Tout ce que tu as noté, relié : une chronologie et une grille joueurs et rôles.','Everything you noted, connected: a timeline and a players-by-characters grid.')],
+      [tr('Journal','Journal'),tr('Tes notes dans l’ordre, avec recherche et filtres.','Your notes in order, with search and filters.')],
+      [tr('Rôles','Characters'),tr('Le script de la partie et ce que fait chaque rôle.','The game’s script and what each character does.')]
+    ])}`);
+}
+function firstStepsSeen(){try{return localStorage.getItem('botc-player-first-steps')==='1';}catch{return true;}}
+// Aide posée sur la table elle-même, au lieu d'une fenetre qui decrit un ecran qu'on n'a pas encore vu.
+function firstStepsHtml(){
+  if(firstStepsSeen())return '';
+  return `<section class="first-steps" aria-labelledby="first-steps-title">
+    <div class="first-steps-head"><h2 id="first-steps-title">${tr('Premiers pas','First steps')}</h2>${button('first-steps-done',tr('J’ai compris','Got it'),'ghost')}</div>
+    <p>${tr('Touche ⚡ quand un joueur te parle, 🗣 quand il annonce son rôle, ☠ quand il meurt. Note ses mots même incomplets.','Tap ⚡ when a player talks to you, 🗣 when they claim a character, ☠ when they die. Note their words even if incomplete.')}</p>
+    <div class="row">${button('table-card',tr('Prévenir ma table','Tell my table'))}${button('glossary',tr('Vocabulaire','Vocabulary'))}</div>
+  </section>`;
 }
 function openPrintSheet() {
   open(tr('Feuille papier','Paper sheet'),`<p class="notice">${tr('Une feuille vierge adaptée au nombre réel de joueurs, à imprimer pour les tables qui préfèrent le papier. Tes notes ne sont pas incluses par défaut.','A blank sheet matching your real player count, to print for tables that prefer paper. Your notes are not included by default.')}</p>
@@ -1069,7 +1113,7 @@ function openSettings() {
     <h3>${tr('Sur cet appareil','On this device')}</h3><div class="quick-actions">${game?button('export',tr('Exporter mon carnet privé (.json)','Export my private notebook (.json)')):''}${button('restore',tr('Restaurer un carnet (.json)','Restore a notebook (.json)'))}${button('backup',tr('Copies de secours et stockage','Backups and storage'))}${button('new',tr('Nouvelle partie','New game'))}${demo?button('leave-demo',tr('Quitter la démo','Leave demo')):button('demo',tr('Ouvrir la démo sans toucher au carnet','Open demo without touching notebook'))}</div>
     <h3>${tr('Installation et hors-ligne','Install and offline')}</h3><p id="offline-status" class="muted">${offlineText()}</p>${deferredInstall?button('install',tr('Installer l’application','Install app'),'primary'):''}${updateReady?button('apply-update',tr('Mettre à jour maintenant','Update now'),'primary'):''}${button('force-update',tr('Forcer la mise à jour (vider le cache)','Force update (clear cache)'))}<p class="muted">${tr('Sur iPhone : Safari → Partager → Sur l’écran d’accueil. Sur ordinateur / Android : menu du navigateur → Installer. Une première ouverture connectée est nécessaire.','On iPhone: Safari → Share → Add to Home Screen. Desktop / Android: browser menu → Install. A first online visit is required.')}</p>
     <p class="notice">${tr('Aucune donnée envoyée au Conteur ni à un service IA. Le stockage navigateur n’est pas chiffré par l’application ; le rideau masque l’écran mais ne verrouille pas l’appareil. Un export contient tes notes secrètes.','No data is sent to the Storyteller or an AI service. Browser storage is not encrypted by the app; the cover hides the screen but does not lock the device. Exports contain your secret notes.')}</p>
-    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 2.3</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
+    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 2.4</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
     $('#language',d).onchange=e=>{lang=e.target.value;savePrefs();render();openSettings();};
     $('#theme',d).onchange=e=>{document.documentElement.dataset.theme=e.target.value;savePrefs();};
     $('#enrichment',d)?.addEventListener('change',e=>{try{change(g=>{g.settings.claimRoleEnrichment=e.target.checked;});}catch(err){error(err.message);}});
@@ -1159,7 +1203,8 @@ const actions={
   close,new:()=>openNew(),demo:launchDemo,player:el=>openPlayer(el.dataset.id),
   roster:openRoster,coverage:openCoverage,
   mask:()=>cover(true),express:el=>openExpress(el.dataset.id||''),
-  mynotes:openMyNotes,'self-add':openSelfEntry,'retain-add':openRetainEntry,endgame:openEndgame,'table-card':openTableCard,onboarding:openOnboarding,
+  mynotes:openMyNotes,'self-add':openSelfEntry,'retain-add':openRetainEntry,endgame:openEndgame,'table-card':openTableCard,onboarding:openOnboarding,glossary:openGlossary,
+  'first-steps-done':el=>{try{localStorage.setItem('botc-player-first-steps','1');}catch{}el.closest('.first-steps')?.remove();$('#main')?.focus({preventScroll:true});},
   'self-delete':el=>change(g=>{g.selfLog=g.selfLog.filter(x=>x.id!==el.dataset.id);})||openMyNotes(),
   'retain-delete':el=>change(g=>{g.retained=g.retained.filter(x=>x.id!==el.dataset.id);})||openMyNotes(),
   'print-sheet':openPrintSheet,

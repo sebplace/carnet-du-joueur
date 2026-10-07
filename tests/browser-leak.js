@@ -83,6 +83,7 @@ async (page) => {
       ['roster','liste des joueurs'],
       ['mynotes','mon jeu'],
       ['table-card','carte a montrer'],
+      ['glossary','vocabulaire'],
       ['endgame','fin de partie'],
       ['coverage','ce que le carnet ne fait pas'],
     ]) await openViaMenu(action,label);

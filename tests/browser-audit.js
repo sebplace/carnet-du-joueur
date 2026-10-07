@@ -104,7 +104,7 @@ async (page) => {
     // --- Cout clavier : on doit pouvoir sauter la liste des joueurs ---
     await p.locator('body').click({position: {x: 5, y: 5}});
     let rang = -1;
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 24; i++) {
       await p.keyboard.press('Tab');
       if ((await p.evaluate(() => (document.activeElement?.textContent || '').trim())).includes('Passer la liste')) { rang = i + 1; break; }
     }

@@ -19,8 +19,9 @@ async(page)=>{
     await p.locator('[data-action=new]').first().click();
     await p.locator('[name=names]').fill('Alice\nBruno\nChloé\nDavid\nEmma\nFarid\nGaëlle');
     await p.locator('#new-form button[type=submit]').click();
-    check((await p.locator('#dialog').innerText()).includes('Soixante secondes'),'first game opens the sixty-second onboarding');
-    await closeDialog();
+    check(!(await p.locator('#dialog').evaluate(d=>d.open)),'a first game no longer opens a modal before the app has been seen');
+    check(await p.locator('.first-steps').count()===1,'the first-steps help sits on the table itself');
+    await p.locator('[data-action=first-steps-done]').click();
 
     let g=await state();
     check(g.version===5,'saves migrate to schema 5');

@@ -19,6 +19,8 @@ async(page)=>{
     await p.locator('[data-action=demo]').first().click();
     await p.locator('.player-card').first().waitFor();
     await unlock();
+    // L aide de premier usage est rejetable : la hauteur se mesure a l etat stable.
+    if(await p.locator('[data-action=first-steps-done]').count())await p.locator('[data-action=first-steps-done]').click();
 
     check(await p.evaluate(()=>Math.round(document.querySelector('#player-grid').getBoundingClientRect().top+scrollY))<520,'table grid starts high enough on a phone');
 

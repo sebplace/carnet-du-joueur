@@ -2,6 +2,64 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.4.0
+
+Retour d'un joueur du groupe qui a teste l'application avec Trouble Brewing :
+l'idee le seduit, mais la prise en main n'est « pas tres intuitive au premier
+abord » et il a « parfois du chercher ou aller ». Il s'inquiete pour quelqu'un
+qui decouvrirait le jeu en meme temps que l'application.
+
+Constat, mesure sur l'application publiee en se placant dans la peau d'un
+nouveau joueur : 41 actions visibles sans defiler, dont 26 sans aucun mot
+(icones seules). L'explication des trois icones de chaque joueur tenait dans
+une legende placee sous les deux barres fixes du bas, donc jamais visible, et
+dans une info-bulle, qui n'existe pas au tactile. L'onboarding promettait un
+bouton « Me parle » que aucun ecran ne portait.
+
+### Les icones ont enfin un mot
+- Les trois colonnes d'icones de la liste des joueurs sont nommees au-dessus
+  d'elles : Parle, Role, Mort. Les mots sont alignes sur leurs icones au pixel
+  pres et ne coutent aucune hauteur : ils partagent la ligne de la recherche.
+- La legende cachee sous les barres fixes disparait.
+
+### Une seule appellation par action
+- L'action ⚡ avait quatre noms : « Me parle » (onboarding), « il me parle »
+  (legende), « Noter ce que dit X » (lecteurs d'ecran), « Saisie rapide »
+  (titre de la fenetre). Elle s'appelle partout « Il me parle ».
+- Le grand bouton du bas, « ⚡ Noter », ouvrait le meme formulaire que le ⚡ de
+  chaque ligne, tandis que « ✎ Note » ouvre une note libre : deux noms presque
+  identiques pour deux actions differentes. Il s'appelle maintenant
+  « ⚡ Il me parle ».
+
+### Une aide sur la table, pas devant elle
+- La fenetre de quatre etapes qui s'ouvrait avant d'avoir vu l'ecran qu'elle
+  decrivait est remplacee par une aide de 190 px posee sur la table. Elle nomme
+  les vrais boutons, se rejette une fois pour toutes, et ne revient pas.
+- « Comment ca marche », depuis l'accueil, reste disponible et dit la meme
+  chose avec les memes mots.
+
+### Un vocabulaire a portee de main
+- Nouveau « Vocabulaire », dans le menu des outils et depuis l'aide : seize
+  termes (conteur, grimoire, siege, script, declaration, indice, execution…)
+  et les trois boutons, en mots simples. Il ne reprend aucun contenu protege.
+
+### Un message qui ne mentait pas moins qu'il ne devait
+- Sur un carnet vierge, le Tableau affichait « Aucune information ne
+  correspond aux filtres » alors que rien n'etait filtre. Il dit maintenant
+  « Rien de note pour l'instant » et propose de retourner a la table. Un vrai
+  filtre sans resultat garde son message.
+
+### Non modifie
+- Les boutons « ✎ Note » de la table et « ＋ Note » du Journal ouvrent la meme
+  note libre depuis deux ecrans differents : ce n'est pas un doublon.
+
+### Pour les carnets deja ouverts
+- L'aide de premier usage s'affichera une fois sur la partie en cours des
+  personnes qui utilisent deja l'application, avec un bouton pour la fermer.
+
+Nouvelle sonde tests/browser-firstrun.js : 37 controles sur le parcours d'un
+premier usage.
+
 ## 2.3.0
 
 Passe de design menee avec /site. Constat mesure avant toute retouche : le
