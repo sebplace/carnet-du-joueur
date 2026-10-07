@@ -121,6 +121,96 @@ async (page) => {
       check(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `la table tient en ${w}px avec ses colonnes nommees`);
     }
     check(errors.length === 0, 'aucune erreur navigateur: ' + errors.join(' | '));
+
+    // ================= Deuxieme passe : accueil, demo, votes, ecrans, fleches =================
+    const c2 = await page.context().browser().newContext({viewport: {width: 390, height: 844}});
+    const q = await c2.newPage();
+    q.on('pageerror', e => errors.push(e.message));
+    try {
+      await q.goto(base + '?p2=' + Date.now(), {waitUntil: 'networkidle'});
+      await q.evaluate(async () => { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); for (const k of await caches.keys()) await caches.delete(k); localStorage.clear(); });
+      await q.goto(base + '?p3=' + Date.now(), {waitUntil: 'networkidle'});
+      await q.waitForTimeout(400);
+
+      // --- D. L accueil montre l application et parle simplement ---
+      const accueil = await q.evaluate(() => {
+        const img = document.querySelector('.hero-shot img');
+        return {texte: document.querySelector('#main').innerText, image: img ? img.complete && img.naturalWidth > 0 : false, alt: img ? img.alt : ''};
+      });
+      check(accueil.image, 'l accueil montre une vraie capture de l application');
+      check(accueil.alt.length > 40, 'cette capture est decrite pour les lecteurs d ecran');
+      check(!/installation du cache|relie les pièces|dit du déduit|CAPTURER|RECOUPER|SE SOUVENIR/.test(accueil.texte), 'le jargon et les slogans abstraits de l ancien accueil ont disparu');
+      check(/fonctionne aussi sans réseau/.test(accueil.texte), 'le hors ligne est dit en mots simples');
+      check(!BLOCKLIST.test(accueil.texte), 'l accueil ne trahit pas l outil prive');
+      check(!/\u2014/.test(accueil.texte), 'aucun tiret cadratin sur l accueil');
+
+      // --- E. La demo propose quoi essayer ---
+      await q.locator('[data-action=demo]').first().click();
+      await q.locator('.player-card').first().waitFor();
+      const cl2 = q.locator('#dialog .dialog-head [data-action=close]');
+      if (await cl2.count() && await cl2.first().isVisible()) await cl2.first().click();
+      check(await q.locator('.try-list li').count() === 3, 'la demo propose trois pistes a essayer');
+      check(/Bruno/.test(await q.locator('.try-list').innerText()) && /Conflits/.test(await q.locator('.try-list').innerText()), 'les pistes citent des elements reels de la demo');
+      await q.locator('[data-action=first-steps-done]').click();
+      check((await q.evaluate(() => localStorage.getItem('botc-player-first-steps'))) === null, 'rejeter l aide de la demo ne la rejette pas pour la vraie partie');
+
+      // --- Piste verifiee : la lentille Conflits montre bien l Empathe en double ---
+      await q.locator('#nav [data-view=overview]').click();
+      await q.waitForTimeout(300);
+      await q.locator('[data-board-analytic]').selectOption('conflits');
+      await q.waitForTimeout(300);
+      const conflits = await q.locator('#board-root').innerText();
+      check(/Bruno/.test(conflits) && /Chloé/.test(conflits) && /Empathe/.test(conflits), 'la piste de la demo mene vraiment au conflit annonce');
+
+      // --- C. Tableau et Journal disent a quoi ils servent ---
+      check(/mêmes notes/.test(await q.locator('#main .page-lede').innerText()), 'le Tableau dit qu il montre les memes notes, reliees');
+      await q.locator('#nav [data-view=journal]').click();
+      await q.waitForTimeout(300);
+      check((await q.locator('#main h1').innerText()) === 'Journal', 'le titre du Journal reprend le nom de son onglet');
+      check(/dans l’ordre/.test(await q.locator('#main .page-lede').innerText()), 'le Journal dit qu il garde les notes dans l ordre');
+
+      // --- B. La fenetre des votes parle simplement ---
+      await q.locator('#nav [data-view=table]').click();
+      await q.locator('main [data-action=round]').click();
+      await q.waitForTimeout(300);
+      const votes = await q.evaluate(() => {
+        const d = document.querySelector('#dialog');
+        const sommaires = [...d.querySelectorAll('summary')].map(s => s.textContent.trim());
+        const autres = [...d.querySelectorAll('details')].find(x => /Autres options/.test(x.textContent));
+        return {texte: d.innerText, sommaires, totalRange: !!(autres && autres.querySelector('[name=value]')), ghostRange: !!(autres && autres.querySelector('[name=applyGhost]')),
+                etatVisible: (() => { const e = d.querySelector('[name=applyState]'); return !!e && e.closest('details') === null; })()};
+      });
+      check(!/Issue observée|décès constaté|non confirmé/.test(votes.texte), 'le vocabulaire administratif de la fenetre des votes a disparu');
+      check(/Résultat du vote/.test(votes.texte), 'le resultat du vote porte un nom courant');
+      check(/seuil usuel/.test(votes.texte), 'le seuil reste affiche');
+      check(votes.sommaires.some(s => /Autres options/.test(s)), 'les champs secondaires sont regroupes derriere Autres options');
+      check(votes.totalRange && votes.ghostRange, 'le total annonce et les votes fantomes y sont');
+      check(votes.etatVisible, 'mais la case qui marque le joueur mort reste visible');
+      await q.locator('#dialog .dialog-head [data-action=close]').click();
+
+      // --- A. Plus aucune section repliable sans fleche ---
+      const sansFleche = [];
+      const examine = async (nom) => {
+        await q.waitForTimeout(250);
+        const r = await q.evaluate(() => [...document.querySelectorAll('summary')].filter(s => s.getBoundingClientRect().height > 0).filter(s => { const a = getComputedStyle(s, '::after'); return !(a.content !== 'none' && a.content !== 'normal' && parseFloat(a.width) > 0); }).map(s => s.textContent.trim().slice(0, 40)));
+        r.forEach(t => sansFleche.push(nom + ' : ' + t));
+      };
+      const ferme = async () => { const b = q.locator('#dialog .dialog-head [data-action=close]'); if (await b.count() && await b.first().isVisible()) await b.first().click(); await q.waitForTimeout(200); };
+      for (const [sel, nom] of [['.thumb-main', 'Il me parle'], ['main [data-action=round]', 'Votes'], ['main [data-action=note]', 'Note libre'], ['.player-card .player-open', 'Fiche joueur'], ['.player-card [data-action=claim]', 'Role annonce']]) {
+        await q.locator(sel).first().click(); await examine(nom); await ferme();
+      }
+      await q.locator('#nav [data-view=script]').click(); await examine('Roles');
+      check(sansFleche.length === 0, 'chaque section repliable porte une fleche' + (sansFleche.length ? ' (manque: ' + sansFleche.join(' ; ') + ')' : ''));
+
+      // --- Le glossaire definit la nomination ---
+      await q.locator('#nav [data-view=table]').click();
+      await q.locator('main [data-action=table-menu]').first().click();
+      await q.locator('#dialog [data-action=glossary]').click();
+      await q.waitForTimeout(250);
+      check((await q.locator('#dialog dt').allInnerTexts()).some(t => /Nomination/.test(t)), 'le vocabulaire definit la nomination');
+    } finally { await c2.close(); }
+
+    check(errors.length === 0, 'aucune erreur navigateur sur la deuxieme passe: ' + errors.join(' | '));
     return {checks: checks.length, passed: checks, errors};
   } finally { await c.close(); }
 }

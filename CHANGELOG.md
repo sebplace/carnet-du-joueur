@@ -2,6 +2,62 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 2.5.0
+
+Suite du retour d'une testeuse (« pas tres intuitive au premier abord »). La 2.4
+avait nomme les icones et pose une aide sur la table. Cette version traite ce
+que la 2.4 avait laisse de cote, mesure sur l'application publiee.
+
+### Les sections repliables se voient
+- Toutes les sections repliables de l'application n'avaient aucune fleche : la
+  regle `summary{display:flex}` supprimait le marqueur natif, donc elles
+  ressemblaient a des titres fixes. Dans « Il me parle », le champ pour annoncer
+  un role etait cache derriere ce qui avait l'air de simple texte.
+- Une fleche est maintenant dessinee par une regle generale, pas par ecran. Les
+  37 sections rencontrees (formulaires, fiche joueur, reglages, vue Roles) en
+  portent une, y compris « Trouver d'autres scripts », ajoutee en 2.1 sans
+  fleche : c'etait mon propre defaut.
+
+### L'accueil montre l'application
+- Le schema abstrait (« ? A B C ! ») est remplace par une vraie capture de la
+  liste des joueurs. Les trois slogans numerotes en capitales (« Separer le dit
+  du deduit », « 01 / CAPTURER »…) deviennent trois phrases qui disent ce qu'on
+  fait : noter ce qu'on te dit, voir qui dit quoi, retenir ce qu'on a dit soi-meme.
+- « Utilisable hors ligne apres installation du cache » devient « Une fois ouvert
+  en ligne, il fonctionne aussi sans reseau ».
+- Les captures du manifeste, qui montraient l'ancienne interface, sont refaites.
+
+### La demo dit par ou commencer
+- L'aide de la demo propose trois choses a essayer, tirees de ce qu'elle
+  contient vraiment : ouvrir la ligne de Bruno, trouver le conflit « Empathe »
+  de Bruno et Chloe dans Tableau puis Analyses puis Conflits, et regarder ses
+  liens dans le Plan. La piste a ete verifiee de bout en bout. La fermer ne
+  ferme pas l'aide de la vraie partie.
+
+### La fenetre des votes parle plus simplement
+- « Issue observee » devient « Resultat du vote », et les options perdent leur
+  vocabulaire administratif (« deces constate », « non confirme »).
+- Le paragraphe de regle qui precedait le premier champ passe de quatre lignes a
+  deux. Le total annonce et les votes fantomes rejoignent « Autres options » ;
+  la case qui marque le joueur mort reste visible, puisqu'elle change l'etat de
+  la partie.
+- Le vocabulaire definit « Nomination ».
+
+### Tableau et Journal disent a quoi ils servent
+- Verification faite sur un carnet reel (indice, declaration, note libre, mort) :
+  chaque note apparait dans les deux ecrans. Ce sont les memes enregistrements,
+  presentes differemment. Rien n'est fusionne.
+- Le Journal portait le titre « Mon carnet » sous l'onglet « Journal » : il
+  s'appelle maintenant « Journal ». Chaque ecran dit en une ligne ce qu'il est :
+  « Tes notes dans l'ordre, a relire ou corriger » et « Les memes notes, reliees
+  entre elles ».
+
+### Typographie
+- Les deux phrases visibles qui contenaient un tiret cadratin sont corrigees, ainsi
+  que deux separateurs dans « Ce que moi j'ai annonce ».
+
+La sonde tests/browser-firstrun.js passe de 37 a 59 controles.
+
 ## 2.4.0
 
 Retour d'un joueur du groupe qui a teste l'application avec Trouble Brewing :

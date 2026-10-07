@@ -146,15 +146,12 @@ body:has(#nav:not([hidden])) #main{padding-bottom:calc(var(--dock-h) + 16px)}
 .hero h1{font-size:clamp(2.7rem,6vw,4.6rem);line-height:1.02}
 .hero p{font-size:1.08rem;color:var(--cp-text-soft);max-width:520px;margin:24px 0}
 .hero .row{margin-top:28px}
-.hero-art{aspect-ratio:1;border:1px solid var(--cp-border-strong);border-radius:50%;position:relative;background:radial-gradient(circle,var(--cp-highlight),var(--cp-surface));display:grid;place-items:center;margin:20px}
-.hero-art::before{content:"";position:absolute;inset:15%;border:1px dashed var(--cp-border-strong);border-radius:50%}
-.hero-art::after{content:"";position:absolute;inset:31%;border:1px solid var(--cp-accent);border-radius:50%}
-.hero-center{text-align:center;z-index:1;line-height:1.1}
-.hero-center strong{display:block;font-size:3.4rem;font-weight:300;color:var(--cp-accent)}
-.orbit{position:absolute;width:64px;height:64px;border:1px solid var(--cp-border-strong);background:var(--cp-surface);border-radius:16px;display:grid;place-items:center;font-size:1.6rem;transform:translate(-50%,-50%) rotate(-6deg)}
+/* vraie capture de l'application à la place du schéma abstrait : on montre ce que c'est au lieu de le suggérer. Cadre de téléphone sobre, fondu en bas puisque l'image est une coupe de l'écran */
+.hero-shot{margin:0;justify-self:center;width:min(100%,300px);border:1px solid var(--cp-border-strong);border-radius:24px;overflow:hidden;background:var(--cp-surface);box-shadow:var(--cp-shadow-soft);-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}
+.hero-shot img{display:block;width:100%;height:auto}
 .features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
 .features .card{padding:22px}
-.feature-number{font-size:.75rem;color:var(--cp-accent);display:block;margin-bottom:16px}
+.features h2{margin:0 0 8px;font-size:var(--fs-lg)}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));background:var(--cp-panel-strong);border-top:1px solid var(--cp-border);z-index:20;display:flex;justify-content:center;padding:8px 12px max(8px,var(--safe-b));gap:8px}
 .bottom-nav button{border:0;background:none;min-width:110px;font-size:.75rem;display:grid;gap:2px;padding:6px 20px;color:var(--cp-text-muted)}
 .bottom-nav button .nav-icon{font-size:1.3rem;line-height:1.1}
@@ -289,7 +286,12 @@ dialog::backdrop{background:var(--cp-overlay);-webkit-backdrop-filter:blur(2px);
 .count-grid label{font-size:var(--fs-micro)}
 .count-grid input{padding:8px}
 details{border-top:1px solid var(--cp-border);padding:12px 0}
-summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}
+summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:10px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+/* display:flex supprime le marqueur natif : sans cette flèche, une section repliable ressemble à un titre fixe et personne ne l'ouvre. Règle générale plutôt qu'un correctif par écran, pour qu'une future section repliable soit lisible d'office */
+summary::after{content:'';flex:0 0 auto;margin-left:auto;width:7px;height:7px;border-right:2px solid var(--cp-text-muted);border-bottom:2px solid var(--cp-text-muted);transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+details[open]>summary::after{transform:translateY(1px) rotate(225deg)}
+@media(prefers-reduced-motion:reduce){summary::after{transition:none}}
 .domain-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--cp-border)}
 .domain-row .grow{flex:1;min-width:0}
 .domain-row .muted{font-size:.8rem}
@@ -407,12 +409,15 @@ body:has(#nav[hidden]) .app-footer-bar{display:none}
 .first-steps-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .first-steps h2{margin:0;font-size:var(--fs-body)}
 .first-steps p{margin:0 0 10px;font-size:var(--fs-caption)}
+.try-list{margin:6px 0 0;padding-left:20px;font-size:var(--fs-caption)}
+.try-list li{margin:0 0 6px}
 .first-steps .row{margin-top:0}
 /* vocabulaire : terme en gras, définition en retrait, sans tableau ni carte par entrée */
 .glossary{margin:0 0 8px}
 .glossary dt{font-weight:700;margin-top:12px}
 .glossary dd{margin:2px 0 0;color:var(--cp-text-soft);font-size:var(--fs-caption);line-height:1.5}
 .glossary-title{margin:20px 0 4px;font-size:var(--fs-body)}
+.page-lede{margin:2px 0 0;font-size:var(--fs-caption)}
 .glossary-title:first-child{margin-top:0}
 .guide section{margin:32px 0}
 /* — mouvement discret : une seule fois, jamais en boucle ; neutralisé par prefers-reduced-motion — */
@@ -424,7 +429,7 @@ dialog[open]{animation:cp-rise .16s ease-out}
 @media(min-width:1000px){.table-aside{position:sticky;top:24px}}
 @media(max-width:760px){
   .app-header{height:64px;padding:10px 16px}.brand{font-size:1.1rem;gap:8px}.brand-seal{width:34px;height:34px}.header-actions{gap:4px}.status{display:none}
-  main{padding:16px 16px 24px}.hero{grid-template-columns:1fr;gap:0;padding:16px 0}.hero-art{max-width:300px;width:80%;margin:32px auto}.hero p{margin:20px 0}.hero h1{font-size:3rem}
+  main{padding:16px 16px 24px}.hero{grid-template-columns:1fr;gap:0;padding:16px 0}.hero-shot{width:min(80%,280px);margin:24px auto}.hero p{margin:20px 0}.hero h1{font-size:3rem}
   .features{grid-template-columns:1fr}.table-layout{grid-template-columns:minmax(0,1fr);gap:12px}
   .table-aside .card{padding:14px}
   .section-head{gap:12px;margin-bottom:20px}.section-head h1{font-size:1.65rem}

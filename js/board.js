@@ -679,7 +679,7 @@ function renderContradictions(model) {
     if (entry.type === 'engine') return `<li><strong>${escapeHtml(t('engineConflict', lang))}</strong><p>${escapeHtml(entry.message)}</p><small>${escapeHtml(t('conflictCaution', lang))}</small></li>`;
     const players = (entry.players || []).map(p => `#${p.seat} ${p.name}`).join(' / ');
     const capacity = entry.type === 'over-claimed' ? ` (${escapeHtml(t('capacity', lang))}: ${escapeHtml(String(entry.capacity))})` : '';
-    return `<li><strong>${escapeHtml(entry.roleName)}${capacity}</strong><p>${escapeHtml(players)} — ${escapeHtml(entry.message)}</p><small>${escapeHtml(t('conflictCaution', lang))}</small></li>`;
+    return `<li><strong>${escapeHtml(entry.roleName)}${capacity}</strong><p>${escapeHtml(players)} : ${escapeHtml(entry.message)}</p><small>${escapeHtml(t('conflictCaution', lang))}</small></li>`;
   };
   return `<section class="board-panel board-conflicts" aria-label="${attr(t('conflits', lang))}"><p class="muted">${escapeHtml(t('conflictsHelp', lang))}</p>${entries.length ? `<ul>${entries.map(item).join('')}</ul>` : `<p class="empty">${escapeHtml(t('noContradictions', lang))}</p>`}</section>`;
 }

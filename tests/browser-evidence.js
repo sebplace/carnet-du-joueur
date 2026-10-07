@@ -61,6 +61,7 @@ async(page)=>{
     await voters.nth(0).locator('[data-vote=yes]').click();
     await voters.nth(0).locator('[data-voteweight]').fill('3');await voters.nth(0).locator('[data-voteweight]').dispatchEvent('input');
     await voters.nth(1).locator('[data-vote=no]').click();
+    await p.locator('#round-form details summary').nth(1).click();
     await p.locator('[name=value]').fill('5');
     await p.locator('[name=applyState]').uncheck();
     await p.locator('#round-form button[type=submit]').click();
