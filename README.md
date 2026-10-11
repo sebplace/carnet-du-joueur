@@ -10,9 +10,10 @@ Carnet du Joueur est un carnet privé hors ligne pour noter, organiser et recoup
 
 ## Ce que fait l’application
 
-- crée une table de 5 à 20 joueurs dans l’ordre des sièges, avec une feuille papier imprimable adaptée au nombre réel de joueurs ;
-- enregistre déclarations, « 3 pour 3 », indices, notes, exécutions, votes, morts de nuit, infos différées et ce que toi tu as affirmé ;
-- relie et visualise tes notes (sièges, table ronde, chronologie, graphe des liens, grille joueur-personnage, carte des contradictions) et permet la recherche ;
+- crée une table de 5 à 20 joueurs dans l’ordre des sièges, avec un script du catalogue, un script importé ou **un scénario personnalisé dont tu coches les rôles** ;
+- se pilote sur le **plan** (le cercle) et la **liste** : un tap sur la forme colorée d’un joueur lui donne un camp (neutre, bleu, rouge, orange), un pinceau colorie plusieurs joueurs d’un coup ;
+- une **fiche par joueur** réunit camp, rôle supposé, effets (empoisonné, ivre, protégé…), notes modifiables et liens qui dépendent du rôle (voisins de l’Empathe, joueurs désignés…), dessinés sur le plan ;
+- enregistre aussi annonces, « 3 pour 3 », exécutions, votes, morts de nuit, infos différées et ce que toi tu as affirmé, dans un journal où l’on corrige une note ;
 - fonctionne localement dans le navigateur et peut être installée comme PWA.
 
 ## Ce qu’elle ne fait pas

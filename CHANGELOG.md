@@ -2,6 +2,58 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 3.0.0
+
+Retour d'un joueur apres une vraie partie : l'application etait « beaucoup trop
+compliquee pour encoder rapidement toutes les informations recues », et le scenario
+joue n'etait pas dans la liste. Cette version recentre tout sur le plan et la
+liste, et remplace les ecrans empiles par une fiche unique par joueur.
+
+### Scenario personnalise
+- La creation de partie propose « Scenario personnalise » : on coche les roles
+  du catalogue complet, classes par type (Villageois, Marginaux, Sbires, Demons,
+  puis Voyageurs et Legendaires), avec recherche, « tout cocher / decocher » par
+  type et un point de depart facultatif (un script existant).
+- Un role absent du catalogue s'ajoute a la main (nom, type, capacite).
+
+### Encoder en un geste
+- Chaque joueur porte une couleur de camp : neutre, bleu, rouge, orange. Un tap
+  sur sa forme (sur le plan comme dans la liste) passe a la couleur suivante.
+  Chaque couleur a aussi sa forme (anneau, rond, triangle, losange) : on les
+  distingue sans voir les couleurs.
+- Un pinceau colorie plusieurs joueurs d'un coup ; ses chiffres sont aussi le
+  decompte des couleurs. Le pinceau mort note des morts. Un second tap de la meme
+  couleur efface.
+- Un tap sur un joueur ouvre une fiche qui reunit tout : camp, role suppose
+  (recherche, rôles deja supposes pour d'autres, decompte par type face aux
+  effectifs de depart), huit effets (empoisonne, ivre, protege, mort la nuit,
+  hors-la-loi, rendu fou, faux suspect, camp change) avec le moment de la note,
+  notes modifiables et supprimables (« A son sujet » ou « Il m'a dit »), liens.
+- Les liens dependent du role suppose : voisins maleficies de l'Empathe
+  (voisins recalcules apres chaque mort), un parmi deux joueurs pour la Lavandiere,
+  la Bibliothecaire et l'Enqueteur, joueurs designes de la Voyante et de la
+  Couturiere, Fossoyeur, Moine, Empoisonneur, Majordome… ou un lien libre. Ils
+  se dessinent sur le plan avec leur resultat.
+- Le plan ecrit le nom et le role suppose pres de chaque siege (jusqu'a 14
+  joueurs), montre les effets, et son centre donne le moment de la partie.
+- Le Journal permet de corriger une note. « Copier un resume » produit un texte
+  brut de la table. L'ecran Roles montre la composition supposee face aux
+  effectifs et les roles encore a attribuer.
+
+### Moins d'ecrans, moins de doublons
+- Le Tableau disparait : ses notes sont celles du Journal, et les liens vivent
+  sur le plan. La barre « Il me parle » et les trois boutons de chaque ligne
+  disparaissent : la fiche les remplace. « Confiance / soupcon » devient la
+  couleur de camp (un ancien carnet la reprend telle quelle).
+- Le schema passe a la version 6 ; les carnets des versions 1 a 5 migrent seuls.
+
+### Interface
+- Refonte visuelle : encre de nuit et laiton, police Cormorant Garamond
+  embarquee (licence OFL, hors ligne), le bleu, le rouge et l'orange ne servent
+  qu'a dire le camp. Fiche en panneau du bas, bascule Plan/Liste, navigation a
+  trois entrees.
+- Aucune violation axe sur 20 ecrans, themes clair et sombre.
+
 ## 2.5.0
 
 Suite du retour d'une testeuse (« pas tres intuitive au premier abord »). La 2.4

@@ -1,5 +1,6 @@
 async(page)=>{
   const context=await page.context().browser().newContext({viewport:{width:390,height:844},colorScheme:'dark'});
+  await context.addInitScript(()=>{if(!localStorage.getItem('botc-player-preferences'))localStorage.setItem('botc-player-preferences',JSON.stringify({lang:'fr',shape:'liste'}));});
   const p=await context.newPage(),checks=[],errors=[];
   p.on('pageerror',e=>errors.push(e.message));
   const unlock=async()=>{
@@ -27,7 +28,7 @@ async(page)=>{
       localStorage.setItem('botc-player-notebook-v1',JSON.stringify(g));
     });
     await p.reload();await p.locator('.player-card').first().waitFor();
-    await p.locator('.player-card [data-action=claim]').nth(1).click();
+    await p.locator('.player-card .seat-open').nth(1).click();await p.locator('#dialog [data-action=claim]').first().click();
     for(const id of ['empath','chef','monk'])await p.locator(`[data-checkrole="${id}"]`).check();
     check(await p.locator('#claim-picker input:checked').count()===3,'three-for-three uses actual checkboxes');
     await choose('weight','5');

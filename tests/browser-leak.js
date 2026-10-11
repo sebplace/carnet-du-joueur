@@ -8,7 +8,8 @@ async (page) => {
   const BLOCKLIST=/calcul|estimation|estimations|estimé|probabilit|pourcentage|percentage|hypothèse|hypothèses|hypothesis|solveur|solver|statistiq|oracle|modèle|model scope|portée du calcul|monde compatible|répartition initiale/i;
   // Exceptions legitimes: phrases qui NIENT l'existence d'un calcul.
   const ALLOWED=[
-    /ne rend aucun verdict/i, /settles no rule/i, /aucune IA/i, /no AI/i
+    /ne rend aucun verdict/i, /settles no rule/i, /aucune IA/i, /no AI/i,
+    /^oracle$/i /* nom d'un vrai rôle du catalogue, listé dans le scénario personnalisé */
   ];
   const scan=async(where)=>{
     const text=await p.evaluate(()=>{
@@ -52,6 +53,9 @@ async (page) => {
     await scan('accueil');
     await p.locator('[data-action=new]').first().click();
     await scan('dialogue nouvelle partie');
+    await p.locator('#new-form [name=script]').selectOption('custom');
+    await scan('scenario personnalise');
+    await p.locator('#new-form [name=script]').selectOption({index:0});
     await p.locator('[name=names]').fill('Alice\nBruno\nChloé\nDavid\nEmma\nFarid\nGaëlle');
     await p.locator('#new-form button[type=submit]').click();
     await p.waitForTimeout(150);
@@ -61,7 +65,7 @@ async (page) => {
     check((await p.evaluate(()=>JSON.parse(localStorage.getItem('botc-player-notebook-v1')).settings.unlocked))===false,'la partie est bien verrouillee');
 
     // Chaque vue.
-    for(const v of ['table','overview','journal','script']){
+    for(const v of ['table','journal','script']){
       await p.locator(`#nav [data-view="${v}"]`).click();
       await p.waitForTimeout(200);
       await scan('vue '+v);
@@ -70,27 +74,42 @@ async (page) => {
     // Chaque dialogue atteignable depuis la table.
     await p.locator('#nav [data-view=table]').click();
     for(const [sel,label] of [
-      ['main [data-action=express]','saisie rapide'],
       ['main [data-action=night]','morts de la nuit'],
       ['main [data-action=round]','execution et votes'],
-      ['main [data-action=note]','note libre'],
       ['main [data-action=phase]','phase'],
-      ['.player-card [data-action=claim]','declaration'],
-      ['.player-card .player-open','fiche joueur'],
     ]) await openAndScan(sel,label);
-    // Outils deplaces dans le menu: ils doivent etre couverts la ou ils vivent maintenant.
+    // La fiche d'un joueur et ses sous-ecrans.
+    await p.locator('[data-plan-seat] .plan-disc').nth(1).click();
+    await p.waitForTimeout(150);
+    await scan('fiche joueur');
+    await p.locator('#dialog [data-action=sheet-role]').click();
+    await scan('choix du role');
+    await p.locator('#dialog [data-action=sheet-back]').click();
+    await p.locator('#dialog [data-action=link-start][data-kind=""]').click();
+    await scan('choix du lien');
+    await p.locator('#dialog [data-action=sheet-back]').click();
+    await p.locator('#dialog [data-action=claim]').first().click();
+    await scan('declaration');
+    await closeDialog();
+    await p.locator('[data-plan-seat] .plan-disc').nth(1).click();
+    await p.locator('#dialog [data-action=player-edit]').click();
+    await scan('reglages du joueur');
+    await closeDialog();
+    await p.locator('main [data-action=new]').count();
+    await p.locator('[data-action=shape][data-shape=liste]').click();
+    await scan('liste des joueurs');
+    await p.locator('[data-action=shape][data-shape=plan]').click();    // Outils deplaces dans le menu: ils doivent etre couverts la ou ils vivent maintenant.
     for(const [action,label] of [
       ['roster','liste des joueurs'],
       ['mynotes','mon jeu'],
       ['table-card','carte a montrer'],
       ['glossary','vocabulaire'],
       ['endgame','fin de partie'],
+      ['summary','resume'],
       ['coverage','ce que le carnet ne fait pas'],
     ]) await openViaMenu(action,label);
 
     // Dialogues de la vue Enquete.
-    await p.locator('#nav [data-view=overview]').click();
-    await p.waitForTimeout(200);
 
     // Reglages et ses sous-dialogues.
     await p.locator('#settings').click();
@@ -108,6 +127,23 @@ async (page) => {
     // Script: import.
     await p.locator('#nav [data-view=script]').click();
     await openAndScan('main [data-action=script-import]','import de script');
+
+    // La partie fictive aussi : c'est la premiere chose que voit un visiteur.
+    await p.goto('http://127.0.0.1:8794/');
+    await p.evaluate(()=>localStorage.clear());
+    await p.reload();
+    await p.locator('[data-action=demo]').first().click();
+    await p.waitForTimeout(250);
+    await scan('demo : plan');
+    await p.locator('[data-plan-seat] .plan-disc').nth(1).click();
+    await p.waitForTimeout(250);
+    await scan('demo : fiche de Bruno');
+    await closeDialog();
+    for(const v of ['journal','script']){
+      await p.locator(`#nav [data-view="${v}"]`).click();
+      await p.waitForTimeout(200);
+      await scan('demo : '+v);
+    }
 
     check(leaks.length===0,'aucune fuite de vocabulaire. Fuites: '+JSON.stringify(leaks,null,1));
     check(errors.length===0,'aucune erreur navigateur: '+errors.join(' | '));

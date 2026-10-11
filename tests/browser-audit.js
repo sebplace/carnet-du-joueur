@@ -66,10 +66,10 @@ async (page) => {
     // --- Hierarchie des titres : aucun saut de niveau (WCAG 1.3.1) ---
     await p.goto(base + '?a=' + Date.now());
     await p.locator('[data-action=demo]').first().click();
-    await p.locator('.player-card').first().waitFor();
+    await p.locator('.plan-seat').first().waitFor();
     const cl = p.locator('#dialog .dialog-head [data-action=close]');
     if (await cl.count() && await cl.first().isVisible()) await cl.first().click();
-    for (const v of ['table', 'journal', 'overview', 'script']) {
+    for (const v of ['table', 'journal', 'script']) {
       await p.locator(`#nav [data-view="${v}"]`).click();
       await p.waitForTimeout(350);
       const saut = await p.evaluate(() => {
@@ -102,6 +102,7 @@ async (page) => {
     }), 'le repere de bas de page reste lisible en entier au-dessus des barres fixes');
 
     // --- Cout clavier : on doit pouvoir sauter la liste des joueurs ---
+    await p.locator('[data-action=shape][data-shape=liste]').click();
     await p.locator('body').click({position: {x: 5, y: 5}});
     let rang = -1;
     for (let i = 0; i < 24; i++) {
@@ -133,30 +134,18 @@ async (page) => {
     // --- Economie visuelle : le chrome ne doit pas manger l ecran ---
     // Les eyebrows ALL CAPS au-dessus de chaque titre ne disaient rien
     // d actionnable, et l en-tete du tableau repetait trois fois la meme chose.
-    for (const v of ['table', 'journal', 'overview', 'script']) {
+    for (const v of ['table', 'journal', 'script']) {
       await p.locator(`#nav [data-view="${v}"]`).click();
       await p.waitForTimeout(350);
       check(await p.locator('#main .eyebrow').count() === 0, `la vue ${v} ne porte aucun libelle decoratif en capitales`);
     }
-    await p.locator('#nav [data-view=overview]').click();
-    await p.waitForTimeout(400);
-    const entete = await p.evaluate(() => {
-      // .sr-only est en position absolue : offsetParent ne suffit pas a le
-      // declarer invisible. On mesure la surface reellement peinte.
-      const visuel = el => {
-        const r = el.getBoundingClientRect();
-        return r.width > 1 && r.height > 1 && getComputedStyle(el).clipPath === 'none';
-      };
-      const h1 = document.querySelector('#main h1')?.textContent.trim() || '';
-      const actif = document.querySelector('[data-board-lens][aria-selected=true]')?.textContent.trim() || '';
-      const h2 = [...document.querySelectorAll('.board-controls h2')];
-      return {h1, actif, visibles: h2.filter(visuel).map(h => h.textContent.trim()), tous: h2.map(h => h.textContent.trim())};
-    });
-    check(!entete.visibles.includes(entete.actif), 'le nom de la lentille n est pas repete a l oeil sous son propre bouton');
-    check(entete.tous.includes(entete.actif), 'mais il reste annonce aux lecteurs d ecran comme titre de section');
-    check(!entete.visibles.some(t => t.includes(entete.h1)), 'le panneau ne repete pas le titre de la page');
-    check(await p.locator('.board-selection').count() === 0, 'aucune pastille de selection tant que rien n est selectionne');
-    check(await p.evaluate(() => !/probabilit/i.test(document.querySelector('#board-root')?.innerHTML || '')), 'le jargon retire de l affichage ne traine plus dans le DOM');
+    // --- Cibles tactiles : la pastille de camp du cadran se touche au pouce ---
+    await p.locator('#nav [data-view=table]').click();
+    await p.locator('[data-action=shape][data-shape=plan]').click();
+    const hits = await p.evaluate(() => [...document.querySelectorAll('.plan-camp-hit')].map(h => { const r = h.getBoundingClientRect(); return Math.min(r.width, r.height); }));
+    check(hits.length === 7 && hits.every(h => h >= 40), 'chaque pastille de camp du cadran offre au moins 40px de cible : ' + hits.map(h => Math.round(h)).join(','));
+    const petits = await p.evaluate(() => [...document.querySelectorAll('#main button, #nav button, header button')].filter(b => b.offsetParent && b.getBoundingClientRect().height < 40 && !b.classList.contains('link-button')).map(b => b.className + ':' + Math.round(b.getBoundingClientRect().height)));
+    check(petits.length === 0, 'aucun bouton de la table ne passe sous 40px de haut : ' + petits.join(' | '));
 
     // --- Graisses : 650, 750 et 900 rendaient exactement comme 700 et 800 ---
     check(await p.evaluate(() => {

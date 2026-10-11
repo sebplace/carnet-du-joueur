@@ -1,0 +1,11 @@
+Cormorant Garamond (sous-ensemble latin, graisses 600 et 700)
+Copyright 2015 The Cormorant Project Authors (github.com/CatharsisFonts/Cormorant)
+
+Cette police est distribuee sous la licence SIL Open Font License, version 1.1.
+Texte integral : https://openfontlicense.org/open-font-license-official-text/
+
+Fichiers obtenus via le paquet npm @fontsource/cormorant-garamond (licence OFL-1.1).
+Ils sont embarques dans l'application pour qu'elle reste lisible hors ligne, sans appel a un service de polices externe.
+
+Cormorant Garamond (Latin subset, weights 600 and 700)
+Copyright 2015 The Cormorant Project Authors. Licensed under the SIL Open Font License 1.1.

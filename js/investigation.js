@@ -1,18 +1,7 @@
 import {buildLastClaimIndex,constraintPeople} from './evidence.js';
+import {neighbourIds,linkEdges} from './encode.js';
 
-function seatNeighboursOf(game,anchorId) {
-  const seats=game.players.filter(p=>!p.traveller);
-  const index=seats.findIndex(p=>p.id===anchorId);
-  if(index<0||seats.length<3)return [];
-  const pick=step=>{
-    for(let i=1;i<seats.length;i++){
-      const candidate=seats[(index+step*i+seats.length*seats.length)%seats.length];
-      if(candidate.id!==anchorId&&candidate.alive)return candidate.id;
-    }
-    return '';
-  };
-  return [pick(-1),pick(1)].filter(Boolean);
-}
+const seatNeighboursOf=neighbourIds;
 
 export function describeRelation(c,playerName,roleName,lang='fr') {
   const roles=c.roleIds.map(roleName).join(' / ');
@@ -74,7 +63,7 @@ export function buildRelations(game) {
   const current=new Set(game.players.map(p=>p.id));
   const nodes=[...game.players,...(game.archivedPlayers||[])].map((p,i)=>({
     id:p.id,name:p.name,seat:current.has(p.id)?game.players.findIndex(x=>x.id===p.id)+1:i+1,
-    alive:p.alive,traveller:p.traveller,archived:!current.has(p.id),trust:p.trust
+    alive:p.alive,traveller:p.traveller,archived:!current.has(p.id),trust:p.trust,camp:p.camp
   }));
   const peopleIds=new Set(nodes.map(p=>p.id));
   const latestClaims=buildLastClaimIndex(game);
@@ -119,6 +108,7 @@ export function buildRelations(game) {
       add(people[j],people[i],'paired',`relation:${c.id}`,c.note||'paired',{roleIds:c.roleIds||[],note:c.note});
     }
   }
+  for(const {from,to,link} of linkEdges(game))add(from,to,'link',`link:${link.id}`,`link:${link.id}`,{roleIds:link.roleId?[link.roleId]:[],note:link.note});
   return {nodes,links:[...links.values()]};
 }
 export function selectRecords(graph,{person='',phase='',query='',type='all',playerName=id=>id,roleName=id=>id}={}) {

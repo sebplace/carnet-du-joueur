@@ -1,5 +1,6 @@
 async (page) => {
   const c=await page.context().browser().newContext({viewport:{width:390,height:844},colorScheme:'dark'});
+  await c.addInitScript(()=>{if(!localStorage.getItem('botc-player-preferences'))localStorage.setItem('botc-player-preferences',JSON.stringify({lang:'fr',shape:'liste'}));});
   const p=await c.newPage(),checks=[],errors=[];
   p.on('pageerror',e=>errors.push(e.message));
   const unlock=async()=>{
@@ -27,7 +28,7 @@ async (page) => {
     await p.reload();await p.locator('.player-card').first().waitFor();
 
     // A weighted claim so there is at least one factor to explain.
-    await p.locator('.player-card [data-action=claim]').nth(1).click();
+    await p.locator('.player-card .seat-open').nth(1).click();await p.locator('#dialog [data-action=claim]').first().click();
     for(const id of ['empath','chef','monk'])await p.locator(`[data-checkrole="${id}"]`).check();
     await p.locator('#dialog [name="weight"]').selectOption('5');
     await p.locator('#claim-form button[type=submit]').click();

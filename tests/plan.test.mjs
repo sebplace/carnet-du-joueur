@@ -57,20 +57,25 @@ test('4. hostile player names are escaped, never raw tags', () => {
 
 test('5. state markers are distinct and not colour-only', () => {
   const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloé', 'David', 'Emma']);
-  g.players[0].trust = 'suspect';
-  g.players[1].alive = false; g.players[1].ghost = true; g.players[1].trust = 'watch';
-  g.players[2].alive = false; g.players[2].ghost = false; g.players[2].trust = 'trusted';
-  g.players[3].traveller = true; g.players[3].trust = 'unknown';
+  g.players[0].camp = 'evil';
+  g.players[1].alive = false; g.players[1].ghost = true; g.players[1].camp = 'doubt';
+  g.players[2].alive = false; g.players[2].ghost = false; g.players[2].camp = 'good';
+  g.players[3].traveller = true; g.players[3].camp = 'neutral';
   const clean = validateGame(g);
   const {svg} = render(clean, {selectedId: ''});
   assert.match(svg, /data-me="true"/);
   assert.match(svg, /data-traveller="true"/);
   assert.match(svg, /data-alive="false"[^>]*data-ghost="true"/);
   assert.ok(svg.includes('plan-dead-cross'), 'dead seats carry a shape marker, not only dimming');
-  for (const trust of ['unknown', 'trusted', 'watch', 'suspect']) {
-    assert.ok(svg.includes(`data-trust="${trust}"`), `trust ${trust} has an assertable marker`);
-    assert.ok(svg.includes(`plan-trust-${trust}`));
+  for (const camp of ['neutral', 'good', 'doubt', 'evil']) {
+    assert.ok(svg.includes(`data-camp="${camp}"`), `camp ${camp} has an assertable marker`);
+    assert.ok(svg.includes(`plan-camp-${camp}`));
   }
+  const shape = camp => svg.match(new RegExp(`plan-camp-${camp}[\\s\\S]*?<(circle|polygon) class="plan-camp-shape"([^>]*)>`));
+  assert.equal(shape('good')[1], 'circle', 'blue is a disc');
+  assert.equal(shape('evil')[1], 'polygon', 'red is a triangle');
+  assert.equal(shape('doubt')[1], 'polygon', 'orange is a diamond');
+  assert.notEqual(shape('evil')[2], shape('doubt')[2], 'triangle and diamond differ in shape, not only in colour');
 });
 
 test('6. twenty players make twenty distinct seats with unique positions', () => {
@@ -100,12 +105,12 @@ test('name font never drops below the 14px dim-room floor', () => {
   }
 });
 
-test('names disappear cleanly past ten players instead of shrinking', () => {
-  const shown = render(validateGame(newGame(SCRIPT, Array.from({length: 10}, (_, i) => `P${i}`))), {}).svg;
-  assert.ok(shown.includes('plan-seat-name'), 'ten players keep names');
-  const hidden = render(validateGame(newGame(SCRIPT, Array.from({length: 11}, (_, i) => `P${i}`))), {}).svg;
-  assert.ok(!hidden.includes('plan-seat-name'), 'eleven players drop names');
-  assert.ok(hidden.includes('plan-seat-mark'), 'hidden-name discs keep the compact glyph cue');
+test('names stay up to fourteen players, then disappear cleanly instead of shrinking', () => {
+  const shown = render(validateGame(newGame(SCRIPT, Array.from({length: 14}, (_, i) => `P${i}`))), {}).svg;
+  assert.ok(shown.includes('plan-seat-name'), 'fourteen players keep names');
+  const hidden = render(validateGame(newGame(SCRIPT, Array.from({length: 15}, (_, i) => `P${i}`))), {}).svg;
+  assert.ok(!hidden.includes('plan-seat-name'), 'fifteen players drop names');
+  assert.ok(hidden.includes('plan-seat-mark') || !/✝|✈|◎/.test(hidden), 'hidden-name discs keep their glyph cue when they carry one');
 });
 
 test('ghost vote state carries a dedicated class, available vs spent', () => {
@@ -335,3 +340,65 @@ test('22. deux liens sur une meme paire ne se cachent plus l un l autre', () => 
   assert.equal(new Set(curves).size, curves.length, 'chaque lien suit sa propre courbe');
 });
 
+
+function roleLinkGame() {
+  const g = newGame(SCRIPT, ['Alice', 'Bruno', 'Chloé', 'David', 'Emma', 'Farid', 'Gaëlle']);
+  const [a, b, c, d] = g.players;
+  a.guess = 'empath'; a.camp = 'good'; a.effects = [{id: 'poisoned', day: 1, phase: 'night'}, {id: 'drunk', day: 2, phase: 'day'}];
+  d.guess = 'chef'; d.camp = 'evil';
+  g.links = [
+    {id: 'k1', kind: 'pick-demon', from: b.id, to: [c.id, d.id], roleId: '', result: 'yes', note: '', day: 1, phase: 'night'},
+    {id: 'k2', kind: 'neighbours', from: a.id, to: [], roleId: '', result: '1', note: '', day: 1, phase: 'night'}
+  ];
+  return validateGame(g);
+}
+const ROLES = {empath: 'Empathe', chef: 'Cuisinier'};
+const roleName = id => ROLES[id] || id;
+
+test('les liens notés avec un rôle se dessinent sans rien sélectionner, les autres non', () => {
+  const g = roleLinkGame();
+  const model = buildPlanModel(g, {selectedId: ''});
+  assert.equal(model.links.length, 4, 'deux cibles pour le désigné et deux voisins pour l’Empathe');
+  assert.equal(model.panelLinks.length, 0);
+  const svg = renderPlan(model, {lang: 'fr', roleName, game: g});
+  assert.equal((svg.match(/<path class="plan-chord plan-kind-link/g) || []).length, 4);
+  assert.ok(svg.includes('>oui<'), 'la réponse du lien est lue sur le trait');
+  assert.ok(svg.includes('>1<'), 'le chiffre de l’Empathe est lu sur le trait');
+  assert.ok(svg.includes('Bruno · A désigné : Chloé et David → oui'), 'la phrase complète est dans l’infobulle');
+});
+
+test('un lien qui ne touche pas le siège choisi reste visible mais en retrait', () => {
+  const g = roleLinkGame();
+  const sel = g.players[4].id;
+  const svg = renderPlan(buildPlanModel(g, {selectedId: sel}), {lang: 'fr', roleName, game: g});
+  assert.ok((svg.match(/plan-chord plan-kind-link plan-chord-dim/g) || []).length === 4, 'tous les traits sont atténués');
+});
+
+test('le siège porte son camp, son rôle supposé, ses effets et une pastille cliquable', () => {
+  const g = roleLinkGame();
+  const svg = renderPlan(buildPlanModel(g, {selectedId: ''}), {lang: 'fr', roleName, game: g});
+  assert.ok(svg.includes('>Empathe<'), 'le rôle supposé est écrit près du siège');
+  assert.ok(svg.includes('>Cuisinier<'));
+  assert.match(svg, /data-plan-camp="[^"]+"/);
+  assert.ok(svg.includes('🧪'), 'le premier effet est visible');
+  assert.ok(svg.includes('+1'), 'le nombre d’effets supplémentaires est visible');
+  assert.match(svg, /rôle supposé Empathe/, 'le lecteur d’écran entend le rôle supposé');
+  assert.match(svg, /camp Bleu/);
+});
+
+test('le centre du cadran donne le moment de la partie et mène à son changement', () => {
+  const g = roleLinkGame();
+  g.day = 3; g.phase = 'night';
+  const svg = renderPlan(buildPlanModel(validateGame(g), {}), {lang: 'fr', roleName});
+  assert.match(svg, /class="plan-hub"[^>]*data-action="phase"/);
+  assert.ok(svg.includes('Nuit 3'));
+  assert.ok(svg.includes('☾'));
+});
+
+test('à dix joueurs et plus, le rôle supposé n’est plus écrit sur le cadran, il reste lisible par le lecteur d’écran', () => {
+  const g = newGame(SCRIPT, Array.from({length: 11}, (_, i) => `P${i}`));
+  g.players[0].guess = 'empath';
+  const svg = renderPlan(buildPlanModel(validateGame(g), {}), {lang: 'fr', roleName});
+  assert.ok(!svg.includes('>Empathe<'));
+  assert.match(svg, /rôle supposé Empathe/);
+});

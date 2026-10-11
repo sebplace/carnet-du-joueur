@@ -1,5 +1,6 @@
 async (page) => {
   const c=await page.context().browser().newContext({viewport:{width:390,height:844},colorScheme:'dark'});
+  await c.addInitScript(()=>{if(!localStorage.getItem('botc-player-preferences'))localStorage.setItem('botc-player-preferences',JSON.stringify({lang:'fr',shape:'liste'}));});
   const p=await c.newPage(),checks=[],errors=[];
   p.on('pageerror',e=>errors.push(e.message));
   const unlock=async()=>{
@@ -50,17 +51,17 @@ async (page) => {
     check((await p.locator('#worlds-constraints, main').innerText()).includes('voisins vivants de Alice'),'the idea is listed in plain language');
 
     // It must actually reach the model.
-    await p.locator('#nav [data-view=overview]').click();
-    await p.locator('#overview-estimates').filter({hasText:'%'}).waitFor({timeout:40000});
-    const before=await p.locator('#overview-estimates').innerText();
+    await p.locator('#nav [data-view=table]').click();
+    await p.locator('#estimates-summary').filter({hasText:'%'}).waitFor({timeout:40000});
+    const before=await p.locator('#estimates-summary').innerText();
     check(before.includes('Empoisonneur'),'the estimate still runs with a neighbourhood idea');
 
     // Reload must preserve it, and the explanation must name it.
     await p.reload();await p.locator('.player-card').first().waitFor();
     check((await state()).scenarios[0].constraints[0].kind==='neighbours','the idea survives a reload');
-    await p.locator('#nav [data-view=overview]').click();
-    await p.locator('#overview-estimates').filter({hasText:'%'}).waitFor({timeout:40000});
-    await p.locator('#overview-estimates [data-action=explain]').first().click();
+    await p.locator('#nav [data-view=table]').click();
+    await p.locator('#estimates-summary').filter({hasText:'%'}).waitFor({timeout:40000});
+    await p.locator('#estimates-summary [data-action=explain]').first().click();
     await p.locator('#explain-body .probability-rows, #explain-body .muted, #explain-body .error').first().waitFor({timeout:60000});
     const explained=await p.locator('#explain-body').innerText();
     check(!explained.includes('Analyse en cours'),'the explanation completes with a neighbourhood idea');

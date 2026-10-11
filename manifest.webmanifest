@@ -47,21 +47,21 @@
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "La liste des joueurs et ce que chacun a déclaré."
+      "label": "La liste des joueurs : un camp en couleur, un rôle supposé, des effets et une note pour chacun."
     },
     {
       "src": "assets/shot-mobile-plan.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Le cadran : les sièges en cercle et les liens entre eux."
+      "label": "Le plan : les sièges en cercle, leurs couleurs, leurs rôles supposés et les liens notés."
     },
     {
       "src": "assets/shot-wide.png",
       "sizes": "1280x800",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Le carnet sur grand écran, liste et derniers échanges côte à côte."
+      "label": "Le carnet sur grand écran : le plan et les derniers échanges côte à côte."
     }
   ],
   "shortcuts": [

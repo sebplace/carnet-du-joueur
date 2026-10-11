@@ -2,9 +2,11 @@ import {uid,TEAMS,STORAGE_KEY,BACKUP_KEY,LIMITS,newGame,newScenario,normalCounts
 import {parseScript,fold} from './catalogue.js';
 import {buildEvidenceModel,lastClaim,ballotSummary,toEngineConstraint,constraintPeople,claimEnrichmentNotices} from './evidence.js';
 import {applyRoster,rosterImpact} from './roster.js';
-import {buildInvestigation,selectRecords,describeRelation} from './investigation.js';
+import {describeRelation} from './investigation.js';
 import {RULES_COVERAGE} from './rules-coverage.js';
-import {renderBoard,resetBoard,seatNeighbours} from './board.js';
+import {createEncoder} from './encode-ui.js';
+import {scriptBuilder} from './script-builder.js';
+import {neighbourIds,guessIndex,guessedByTeam,describeLink,EFFECTS,CAMP_NAMES} from './encode.js';
 import {whoKnows,retainedSeries,PUBLIC_AUDIENCE} from './mynotes.js';
 import {printableSheet} from './print.js';
 import {buildPlanModel,renderPlan} from './plan.js';
@@ -20,15 +22,13 @@ let estimator = null;
 let explainer = null;
 let analysis = null, worker = null, requestId = '', analyzing = false, deferredInstall = null, toastTimer, returnFocus;
 let bookFilter = '', roleFilter = '', roleTeam = 'all', noteSearch = '';
-let tableShape = 'liste', planSeat = '';
+let tableShape = 'plan', planSeat = '';
 function savePrefs(){try{localStorage.setItem('botc-player-preferences',JSON.stringify({lang,theme:document.documentElement.dataset.theme,shape:tableShape}));}catch(e){console.warn(e);}}
 let prediction=null,predictionId='',predictionTimer=null,predictionBusy=false,predictionError='';
-const investigationView={person:'',phase:'',query:'',type:'all',page:0};
 const tr = (fr,en) => lang === 'fr' ? fr : en;
 const loc = v => typeof v === 'string' ? v : v?.[lang] || v?.en || v?.fr || '';
 const teamNames = {townsfolk:['Villageois','Townsfolk'],outsider:['Marginal','Outsider'],minion:['Sbire','Minion'],demon:['Démon','Demon'],traveller:['Voyageur','Traveller'],fabled:['Légendaire','Fabled'],unknown:['Non documenté','Unknown']};
 const teamName = id => tr(...(teamNames[id] || teamNames.unknown));
-const trustNames = {unknown:['À découvrir','Unclear'],trusted:['Confiance','Trusted'],watch:['À recouper','Cross-check'],suspect:['Soupçon','Suspect']};
 const phaseName = (g=game) => `${tr(g.phase==='day'?'Jour':'Nuit',g.phase==='day'?'Day':'Night')} ${g.day}`;
 const player = id => game.players.find(p=>p.id===id)||(game.archivedPlayers||[]).find(p=>p.id===id);
 const pname = id => player(id)?.name || tr('Sans source','No source');
@@ -78,8 +78,7 @@ function replaceGame(next,isDemo=false) {
   if (!isDemo) store.save(clean,{backup:true});
   game=clean;demo=isDemo;history.clear();locked=false;loadError='';invalidate();
   bookFilter='';roleFilter='';roleTeam='all';noteSearch='';noteType='';
-  resetBoard();
-  Object.assign(investigationView,{person:'',phase:'',query:'',type:'all',page:0});
+  encoder.resetBrush();planSeat='';
   view='table';close();render();schedulePrediction();
 }
 function event(g,type,text,playerIds=[],sourceId='',value='',roleId='') {
@@ -118,6 +117,7 @@ function clearDraft() { try{sessionStorage.removeItem(DRAFT_KEY);}catch{} }
 function open(title,html,init) {
   const dialog=$('#dialog');
   if (!dialog.open) returnFocus=document.activeElement;
+  dialog.classList.remove('sheet');
   dialog.innerHTML=`<div class="dialog-head"><h2 id="dialog-title">${esc(title)}</h2><div class="row"><button type="button" class="icon-button" data-action="mask" aria-label="${tr('Masquer l’écran','Hide screen')}" title="${tr('Masquer l’écran','Hide screen')}">◐</button><button type="button" class="icon-button" data-action="close" aria-label="${tr('Fermer','Close')}">×</button></div></div><div class="dialog-body"><p id="form-error" class="notice error" role="alert" hidden></p>${html}</div>`;
   if (!dialog.open) dialog.showModal();
   harden(dialog);
@@ -130,6 +130,11 @@ function confirmAction(title,text,action) {
     $('#confirm-action',d).onclick=()=>{try{action();close();}catch(e){error(e.message);}};
   });
 }
+const encoder=createEncoder({
+  game:()=>game,lang:()=>lang,change,open,close,error,toast,render,esc,button,event,uid,fold,
+  role,roles,loc,rname,pname,roleLabel,teamName,latestClaim,
+  compactPrediction:id=>compactPrediction(id),unlocked:()=>unlocked(),playerPrediction:id=>playerPrediction(id)
+});
 function rolePicker(container, selected=[], allowed=roles(),checkboxes=false) {
   const chosen=new Set(selected);
   container.innerHTML=`<label>${tr('Chercher un rôle','Find a character')}<input class="picker-search" type="search" placeholder="${tr('Nom français ou anglais','French or English name')}"></label><div class="picker-count muted"></div><div class="picker"></div>`;
@@ -177,7 +182,6 @@ function render() {
   $('#save-status').textContent=demo?tr('Démo non enregistrée','Unsaved demo'):locked?tr('Lecture seule','Read only'):game?tr('Enregistré ici','Saved here'):tr('Carnet privé','Private notebook');
   $('#undo').disabled=!history.canUndo() || locked;
   $('#nav').hidden=!game;
-  $('#thumb-bar').hidden=!game;
   $('#banner').hidden=!demo&&!locked&&!loadError&&!updateReady;
   if(demo)$('#banner').textContent=tr('PARTIE FICTIVE • Ton vrai carnet est intact.','FICTIONAL GAME • Your real notebook is untouched.');
   else if(locked)$('#banner').textContent=tr('Cette partie a changé dans une autre fenêtre. Recharge pour reprendre.','This game changed in another window. Reload to resume.');
@@ -186,145 +190,82 @@ function render() {
   else $('#banner').textContent='';
   if(!game){renderWelcome();return;}
   if(view==='worlds'&&!unlocked())view='table';
-  const nav=[['table','◎','Joueurs','Players'],['overview','⌘','Tableau','Board'],['journal','≡','Journal','Log'],...(unlocked()?[['worlds','◇','Hypothèses','Hypotheses']]:[]),['script','▤','Rôles','Characters']];
+  if(view==='overview')view='table';
+  const nav=[['table','◎','Joueurs','Players'],['journal','≡','Journal','Log'],...(unlocked()?[['worlds','◇','Hypothèses','Hypotheses']]:[]),['script','▤','Rôles','Characters']];
   $('#nav').innerHTML=nav.map(([id,icon,fr,en])=>`<button data-action="view" data-view="${id}" class="${view===id?'active':''}" aria-current="${view===id?'page':'false'}"><span class="nav-icon" aria-hidden="true">${icon}</span>${tr(fr,en)}</button>`).join('');
-  $('#thumb-bar').innerHTML=`${button('express',tr('⚡ Il me parle','⚡ Talks to me'),'primary thumb-main')}<button type="button" class="icon-button thumb-hide" data-action="mask" aria-label="${tr('Masquer l’écran','Hide screen')}" title="${tr('Masquer l’écran','Hide screen')}">◐</button>`;
-  ({table:renderTable,overview:renderOverview,journal:renderJournal,worlds:renderWorlds,script:renderScript}[view])();
+  ({table:renderTable,journal:renderJournal,worlds:renderWorlds,script:renderScript}[view])();
 }
 function renderWelcome() {
   $('#main').innerHTML=`
     <section class="hero">
       <div><div class="eyebrow">${tr('Blood on the Clocktower • Compagnon non officiel','Blood on the Clocktower • Unofficial companion')}</div>
-      <h1>${tr('Tout le monde<br>a une version.','Everyone has<br>a story.')}<br><span style="color:var(--cp-accent)">${tr('Garde le fil.','Keep the thread.')}</span></h1>
+      <h1>${tr('Tout le monde<br>a une version.','Everyone has<br>a story.')}<br>${tr('Garde le fil.','Keep the thread.')}</h1>
       <p>${tr('Pendant une partie, note vite ce que chaque joueur te dit et retrouve tout d’un coup d’œil. Un carnet privé, qui ne joue pas à ta place.','During a game, quickly note what each player tells you and find it all at a glance. A private notebook that does not play for you.')}</p>
       <div class="row">${button('new',tr('Ouvrir mon carnet','Start my notebook'),'primary')}${button('demo',tr('Explorer une démo','Explore a demo'))}${button('onboarding',tr('Comment ça marche','How it works'))}</div>
       <p class="footer-note">${tr('Sans compte, sans connexion au Conteur. Une fois ouvert en ligne, il fonctionne aussi sans réseau.','No account, no connection to the Storyteller. Once opened online, it also works without a network.')}</p></div>
       <figure class="hero-shot"><img src="./assets/welcome-table.png" width="390" height="560" alt="${tr('Aperçu du carnet : la liste de sept joueurs, avec pour chacun trois boutons nommés Parle, Rôle et Mort.','Preview of the notebook: a list of seven players, each with three buttons named Talks, Role and Dead.')}" decoding="async"></figure>
     </section>
     <div class="features">
-      <section class="card"><h2>${tr('Note ce qu’on te dit','Note what you are told')}</h2><p class="muted">${tr('Touche ⚡ sur un joueur et écris ses mots, même incomplets. Chaque rôle qu’il annonce est gardé, avec ses changements.','Tap ⚡ on a player and write their words, even incomplete. Every character they claim is kept, with its changes.')}</p></section>
-      <section class="card"><h2>${tr('Vois qui dit quoi','See who said what')}</h2><p class="muted">${tr('Le Tableau relie tes notes par joueur et par jour, et signale deux joueurs qui annoncent le même rôle. Ce qui est annoncé n’est pas forcément vrai : le carnet ne conclut jamais à ta place.','The Board links your notes by player and by day, and flags two players who claim the same character. What is claimed is not necessarily true: the notebook never concludes for you.')}</p></section>
+      <section class="card"><h2>${tr('Colorie, un tap par joueur','Colour, one tap per player')}</h2><p class="muted">${tr('Neutre, bleu, rouge ou orange : la forme colorée de chaque joueur donne son camp. Un pinceau en peint plusieurs d’un coup.','Neutral, blue, red or orange: each player’s coloured shape gives their side. A brush paints several at once.')}</p></section>
+      <section class="card"><h2>${tr('Une fiche par joueur','One sheet per player')}</h2><p class="muted">${tr('Rôle supposé, effets, notes modifiables et liens : ce que tu sais d’un joueur tient sur un seul écran. Les liens se dessinent sur le plan.','Assumed character, effects, editable notes and links: what you know about a player fits on one screen. Links are drawn on the plan.')}</p></section>
       <section class="card"><h2>${tr('Retiens ce que tu as dit toi-même','Remember what you said yourself')}</h2><p class="muted">${tr('Note tes propres annonces, à qui et quand, pour rester cohérent d’une nuit à l’autre.','Record your own claims, to whom and when, to stay consistent from one night to the next.')}</p></section>
     </div>
     <p class="footer-note">Sébastien Place / @sebplace • <a href="./guide.html">${tr('Guide et limites','Guide and limitations')}</a> • CC BY-NC-SA 4.0 • ${tr('À utiliser avec l’accord de la table.','Use with your table’s agreement.')}</p>`;
 }
-function renderTable() {
-  const alive=game.players.filter(p=>p.alive).length;
-  const ghosts=game.players.filter(p=>!p.alive&&p.ghost).length;
-  $('#main').innerHTML=`
-    <div class="table-bar">
-      <div class="table-bar-title"><h1>${esc(game.title)}</h1><p class="muted small">${esc(game.script.name)}</p></div>
-      ${button('phase',`${esc(phaseName())} ›`,'phase-pill')}
-      ${button('table-menu','⋯','icon-button',`aria-label="${tr('Autres outils','More tools')}"`)}
-    </div>
-    <p class="table-pulse">${tr(`${alive} en vie sur ${game.players.length}`,`${alive} alive of ${game.players.length}`)}${ghosts?` · ${tr(`${ghosts} vote(s) fantôme(s)`,`${ghosts} ghost vote(s)`)}`:''}</p>
-    <div class="row quick-actions">${button('night',tr('☾ Nuit','☾ Night'))}${button('round',tr('⚖ Votes','⚖ Votes'))}${button('note',tr('✎ Note','✎ Note'))}</div>
-    <div class="shape-switch" role="group" aria-label="${tr('Forme d’affichage','Display shape')}">
-      <button type="button" data-action="shape" data-shape="liste" class="${tableShape==='liste'?'active':''}" aria-pressed="${tableShape==='liste'}">${tr('Liste','List')}</button>
-      <button type="button" data-action="shape" data-shape="plan" class="${tableShape==='plan'?'active':''}" aria-pressed="${tableShape==='plan'}">${tr('Plan','Plan')}</button>
-    </div>
-    ${firstStepsHtml()}
-    <div class="table-layout"><div>
-    ${tableShape==='plan'?`<div id="plan-root"></div>`:`
-    <div class="seat-toolbar">
-      <label class="search table-search"><span class="sr-only">${tr('Trouver un joueur','Find a player')}</span><input id="player-search" type="search" placeholder="${tr('Joueur ou rôle…','Player or character…')}" value="${esc(bookFilter)}"></label>
-      <div class="seat-cols" aria-hidden="true"><span><i>⚡</i>${tr('Parle','Talks')}</span><span><i>🗣</i>${tr('Rôle','Role')}</span><span><i>☠</i>${tr('Mort','Dead')}</span></div>
-    </div>
-    <a class="skip skip-inline" href="#after-players">${tr('Passer la liste des joueurs','Skip the player list')}</a>
-    <div class="player-grid" id="player-grid"></div>
-    <p class="seat-legend" id="after-players" tabindex="-1">${tr('Touche une ligne pour tout voir sur ce joueur.','Tap a row to see everything about that player.')}</p>`}
-    <p class="footer-note">${tr('Confiance et soupçons sont ton appréciation, pas une vérité. Les morts continuent à jouer.','Trust and suspicion are your judgement, not truth. Dead players still play.')}</p></div>
-    <aside class="table-aside"><section class="card"><h2>${tr('Derniers échanges','Recent entries')}</h2><div class="mini-timeline">${timeline(game.events.slice(-3).reverse(),true)}</div></section></aside></div>
-    ${estimatesOn()?`<section class="card spaced"><h2>${tr('Démons et sbires possibles','Possible Demons and Minions')}</h2><div id="estimates-summary" aria-live="polite">${predictionSummary()}</div></section>`:''}`;
-  if(tableShape==='plan')drawPlan();
-  else{drawPlayers();$('#player-search').oninput=e=>{bookFilter=e.target.value;drawPlayers();};}
-}
-function drawPlan() {
-  const root=$('#plan-root');
-  if(!root)return;
-  try{
-    const model=buildPlanModel(game,{selectedId:planSeat,size:320});
-    root.innerHTML=renderPlan(model,{lang,roleName:rname,selectedId:planSeat,size:320});
-    if(planSeat)keepPlanInView(root);
-  }catch(e){console.error(e);root.innerHTML=`<p class="notice error">${esc(tr('Le plan n’a pas pu s’afficher : ','The plan could not render: ')+e.message)}</p>`;}
-}
-// La reponse ne sert a rien sous la ligne de flottaison : on cale le cadran et
-// ses liens dans l ecran, et seulement si le panneau depasse vraiment.
-function keepPlanInView(root) {
-  const panel=$('.plan-connections',root);
-  if(!panel||typeof panel.getBoundingClientRect!=='function')return;
-  requestAnimationFrame(()=>{
-    const box=panel.getBoundingClientRect();
-    const limit=window.innerHeight-(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-h'))||150);
-    if(box.bottom<=limit)return;
-    const section=root.querySelector('.plan')||root;
-    section.scrollIntoView({block:'start',behavior:'smooth'});
-  });
-}
-function drawPlayers() {
-  const q=fold(bookFilter);
-  $('#player-grid').innerHTML=game.players.filter(p=>fold(p.name+' '+roleLabel(latestClaim(p.id)?.roleIds || [])).includes(q)).map(p=>{
-    const c=latestClaim(p.id),index=game.players.indexOf(p)+1;
-    const state=p.alive?'':(p.ghost?tr('mort · vote restant','dead · vote left'):tr('mort · vote utilisé','dead · vote used'));
-    return `<article class="player-card seat ${p.id===game.myId?'mine':''} ${p.alive?'':'dead'} trust-${p.trust}">
-      <button class="player-open seat-open" data-action="player" data-id="${p.id}" aria-label="${esc(tr('Ouvrir ','Open ')+p.name)}">
-        <span class="seat-num">${String(index).padStart(2,'0')}</span>
-        <span class="seat-body">
-          <span class="seat-name">${esc(p.name)}${p.id===game.myId?` <em>${tr('moi','me')}</em>`:''}${p.traveller?` <span class="seat-flag">${tr('voyageur','traveller')}</span>`:''}</span>
-          <span class="seat-claim">${c?esc(roleLabel(c.roleIds)):tr('—','—')}</span>
-        </span>
-        ${state?`<span class="seat-state">${state}</span>`:''}
-        <span data-compact-estimate="${p.id}">${compactPrediction(p.id)}</span>
-      </button>
-      <div class="seat-actions">
-        ${button('express','⚡','seat-act',`data-id="${p.id}" aria-label="${esc(tr('Il me parle : noter ce que dit ','Talks to me: note what ')+p.name+tr('',' says'))}" title="${tr('Il me parle','Talks to me')}"`)}
-        ${button('claim','🗣','seat-act',`data-id="${p.id}" aria-label="${esc(tr('Rôle annoncé : noter le rôle que ','Claimed character: note the character ')+p.name+tr(' annonce',' claims'))}" title="${tr('Rôle annoncé','Claimed character')}"`)}
-        ${button('life',p.alive?'☠':'✚','seat-act',`data-id="${p.id}" aria-label="${esc((p.alive?tr('Mort : noter la mort de ','Dead: mark dead '):tr('Vivant : noter le retour en vie de ','Alive: mark alive '))+p.name)}" title="${p.alive?tr('Mort','Dead'):tr('Vivant','Alive')}"`)}
-      </div></article>`;
-  }).join('') || `<p class="empty">${tr('Aucun joueur trouvé.','No player found.')}</p>`;
-}
+function renderTable() {
+  const alive=game.players.filter(p=>p.alive).length;
+  const ghosts=game.players.filter(p=>!p.alive&&p.ghost).length;
+  const steps=firstStepsHtml();
+  const pulse=`${tr(`${alive} en vie sur ${game.players.length}`,`${alive} alive of ${game.players.length}`)}${ghosts?` · ${tr(`${ghosts} vote(s) fantôme(s)`,`${ghosts} ghost vote(s)`)}`:''}`;
+  $('#main').innerHTML=`
+    <div class="table-bar">
+      <div class="table-bar-title"><h1>${esc(game.title)}</h1><p class="muted small">${esc(game.script.name)} · ${esc(pulse)}</p></div>
+      ${button('phase',`${esc(phaseName())} ›`,'phase-pill')}
+      ${button('table-menu','⋯','icon-button',`aria-label="${tr('Autres outils','More tools')}"`)}
+    </div>
+    <div class="table-controls">
+      <div class="shape-switch" role="group" aria-label="${tr('Forme d’affichage','Display shape')}">
+        <button type="button" data-action="shape" data-shape="plan" class="${tableShape==='plan'?'active':''}" aria-pressed="${tableShape==='plan'}">${tr('Plan','Plan')}</button>
+        <button type="button" data-action="shape" data-shape="liste" class="${tableShape==='liste'?'active':''}" aria-pressed="${tableShape==='liste'}">${tr('Liste','List')}</button>
+      </div>
+      <div class="row quick-actions">${button('night',tr('☾ Nuit','☾ Night'))}${button('round',tr('⚖ Votes','⚖ Votes'))}</div>
+    </div>
+    ${encoder.brushBarHtml(!steps)}
+    ${steps}
+    <div class="table-layout"><div>
+    ${tableShape==='plan'?`<div id="plan-root"></div>`:`
+    ${game.players.length>8?`<label class="search table-search"><span class="sr-only">${tr('Trouver un joueur','Find a player')}</span><input id="player-search" type="search" placeholder="${tr('Joueur ou rôle…','Player or character…')}" value="${esc(bookFilter)}"></label>`:''}
+    <a class="skip skip-inline" href="#after-players">${tr('Passer la liste des joueurs','Skip the player list')}</a>
+    <div class="player-grid" id="player-grid"></div>
+    <span id="after-players" tabindex="-1"></span>`}
+    <p class="footer-note">${esc(encoder.startLine())} ${tr('Les couleurs sont ton appréciation, pas une vérité. Les morts continuent à jouer.','Colours are your judgement, not truth. Dead players still play.')}</p></div>
+    <aside class="table-aside"><section class="card"><h2>${tr('Derniers échanges','Recent entries')}</h2><div class="mini-timeline">${timeline(game.events.slice(-3).reverse(),true)}</div></section></aside></div>
+    ${estimatesOn()?`<section class="card spaced"><h2>${tr('Démons et sbires possibles','Possible Demons and Minions')}</h2><div id="estimates-summary" aria-live="polite">${predictionSummary()}</div></section>`:''}`;
+  if(tableShape==='plan')drawPlan();
+  else{drawPlayers();const search=$('#player-search');if(search)search.oninput=e=>{bookFilter=e.target.value;drawPlayers();};}
+}
+function drawPlan() {
+  const root=$('#plan-root');
+  if(!root)return;
+  try{
+    const model=buildPlanModel(game,{selectedId:planSeat,size:320});
+    root.innerHTML=renderPlan(model,{lang,roleName:rname,selectedId:planSeat,size:320,game});
+  }catch(e){console.error(e);root.innerHTML=`<p class="notice error">${esc(tr('Le plan n’a pas pu s’afficher : ','The plan could not render: ')+e.message)}</p>`;}
+}
+function drawPlayers() {
+  const q=fold(bookFilter);
+  $('#player-grid').innerHTML=game.players.filter(p=>fold(p.name+' '+roleLabel(latestClaim(p.id)?.roleIds || [])+' '+(p.guess?rname(p.guess):'')).includes(q)).map(p=>encoder.seatRowHtml(p,game.players.indexOf(p)+1)).join('') || `<p class="empty">${tr('Aucun joueur trouvé.','No player found.')}</p>`;
+}
 function timeline(entries,mini=false) {
   if(!entries.length)return `<p class="muted">${tr('Rien de noté pour le moment.','Nothing noted yet.')}</p>`;
   const labels={claim:['Déclaration','Claim'],info:['Indice','Clue'],note:['Note','Note'],death:['Mort','Death'],revival:['Retour en vie','Revival'],execution:['Exécution','Execution'],vote:['Vote','Vote'],phase:['Phase','Phase'],night:['Bilan de nuit','Night summary']};
-  return entries.map(e=>`<article class="timeline-item"><div class="row"><small>${esc(phaseName(e))} · ${tr(...labels[e.type])}</small>${!mini?button('delete-event','×','icon-button',`data-id="${e.id}" aria-label="${tr('Supprimer cette entrée','Delete this entry')}"`):''}</div><h3>${e.playerIds.length?esc(e.playerIds.map(pname).join(' / ')):esc(game.title)}</h3>${e.sourceId?`<small>${tr('Source','Source')} : ${esc(pname(e.sourceId))}</small>`:''}<p>${esc(e.text)}</p>${e.roleId?`<span class="chip">${esc(rname(e.roleId))}</span>`:''}${e.value&&e.type!=='claim'?` <span class="chip accent">${esc(e.value)}</span>`:''}${!mini?eventDetails(e):''}</article>`).join('');
+  return entries.map(e=>`<article class="timeline-item"><div class="row"><small>${esc(phaseName(e))} · ${tr(...labels[e.type])}</small>${!mini?`<span class="row">${e.type==='info'||e.type==='note'?button('note-edit-dialog','✎','icon-button',`data-id="${e.id}" aria-label="${tr('Modifier cette note','Edit this note')}"`):''}${button('delete-event','×','icon-button',`data-id="${e.id}" aria-label="${tr('Supprimer cette entrée','Delete this entry')}"`)}</span>`:''}</div><h3>${e.playerIds.length?esc(e.playerIds.map(pname).join(' / ')):esc(game.title)}</h3>${e.sourceId?`<small>${tr('Source','Source')} : ${esc(pname(e.sourceId))}</small>`:''}<p>${esc(e.text)}</p>${e.roleId?`<span class="chip">${esc(rname(e.roleId))}</span>`:''}${e.value&&e.type!=='claim'?` <span class="chip accent">${esc(e.value)}</span>`:''}${!mini?eventDetails(e):''}</article>`).join('');
 }
 function renderJournal() {
   $('#main').innerHTML=`<div class="section-head"><div><h1>${tr('Journal','Journal')}</h1><p class="muted page-lede">${tr('Tes notes dans l’ordre, à relire ou corriger.','Your notes in order, to reread or correct.')}</p></div>${button('note',tr('＋ Note','＋ Note'),'primary')}</div>
     <div class="filters">${['', 'claim','info','vote','execution','night','note'].map((v,i)=>button('journal-filter',[tr('Tout','All'),tr('Déclarations','Claims'),tr('Indices','Clues'),tr('Votes','Votes'),tr('Exécutions','Executions'),tr('Nuits','Nights'),tr('Notes','Notes')][i],noteType===v?'selected':'',`data-type="${v}"`)).join('')}</div>
     <label class="search">${tr('Rechercher dans le carnet','Search notebook')}<input id="note-search" type="search" value="${esc(noteSearch)}" placeholder="${tr('Joueur, rôle, mot-clé…','Player, character, keyword…')}"></label><div class="grid"><section class="card" aria-labelledby="journal-entries-title"><h2 id="journal-entries-title" class="sr-only">${tr('Toutes les entrées du carnet','All notebook entries')}</h2><div id="journal-entries"></div></section><aside class="card"><h2>${tr('Pistes à recouper','Threads to cross-check')}</h2>${issues()}<div class="notice">${tr('Deux personnes peuvent honnêtement croire au même rôle. Une contradiction suggère une question, pas un menteur certain.','Two people can honestly believe they are the same character. A contradiction suggests a question, not a proven liar.')}</div></aside></div>`;
   drawJournal();$('#note-search').oninput=e=>{noteSearch=e.target.value;drawJournal();};
-}
-function recordType(type) {
-  const types={claim:['Déclaration','Claim'],info:['Indice','Clue'],note:['Note','Note'],vote:['Vote','Vote'],execution:['Exécution','Execution'],night:['Nuit','Night'],death:['Mort annoncée','Announced death'],revival:['Retour en vie','Revival'],phase:['Moment','Phase'],hypothesis:['Idée à tester','Idea to test']};
-  return tr(...(types[type]||types.note));
-}
-function impactLabel(r) {
-  return r.impact==='weight'?tr(`Poids subjectif ×${r.multiplier}`,`Subjective weight ×${r.multiplier}`):r.impact==='strict'?tr('Restriction choisie','Chosen restriction'):r.impact==='conditional'?tr('Filtre sous conditions','Conditional filter'):tr('Noté, non utilisé par le calcul','Recorded, not used by calculation');
-}
-function renderOverview() {
-  $('#main').innerHTML=`<div class="section-head"><div><h1>${tr('Le tableau','The board')}</h1><p class="muted page-lede">${tr('Les mêmes notes, reliées entre elles.','The same notes, connected to each other.')}</p></div></div>
-    
-    <div id="board-root"></div>
-    ${unlocked()?`<section class="card spaced"><h2>${tr('Ce que le calcul en déduit','What the calculation infers')}</h2><div id="overview-estimates" aria-live="polite">${predictionSummary()}</div></section>`:''}`;
-  drawOverview();
-}
-function boardContext() {
-  return {game,catalogue,prediction,lang,showModel:unlocked(),playerName:pname,roleName:rname,openPlayer,openRecord:inspectRecord};
-}
-function drawOverview() {
-  const root=$('#board-root');
-  if(!root)return;
-  try{renderBoard(root,boardContext());}
-  catch(e){console.error(e);root.innerHTML=`<p class="notice error">${esc(tr('Le tableau n’a pas pu s’afficher : ','The board could not render: ')+e.message)}</p>`;}
-}
-function inspectRecord(key) {
-  const record=buildInvestigation(game).records.find(r=>r.id===key);
-  if(!record){toast(tr('Cette information n’existe plus.','This record no longer exists.'));return;}
-  if(record.type==='claim'){
-    const c=game.claims.find(c=>c.id===record.ref);
-    open(tr('Déclaration reliée','Linked claim'),`<p>${esc(pname(c.playerId))} · ${esc(phaseName(c))}</p><h3>${esc(roleLabel(c.roleIds))}</h3><p>${tr('Source : ','Source: ')}${esc(pname(c.sourceId||c.playerId))}</p><p>${esc(c.note)}</p><p class="notice">${esc(impactLabel(record))}. ${record.latest?tr('Dernière déclaration chronologique.','Chronologically latest claim.'):tr('Ancienne déclaration, non pondérée.','Older claim, not weighted.')}</p><div class="row">${button('edit-claim',tr('Corriger / pondérer','Edit / weight'),'',`data-id="${c.id}"`)}${button('player',tr('Ouvrir la fiche','Open player card'),'',`data-id="${c.playerId}"`)}</div>`);
-  }else if(record.relation)open(tr('Une idée imposée au modèle','An idea imposed on the model'),`<h3 class="spaced">${esc(describeRelation(record.relation,pname,rname,lang))}</h3><p>${esc(record.text)}</p><p class="notice">${tr('C’est une supposition de l’utilisateur, pas une règle prouvée par les témoignages.','This is a user assumption, not a rule proven by testimony.')}</p>${button('view',tr('Modifier mes hypothèses','Edit hypotheses'),'',`data-view="worlds"`)}`);
-  else{const e=game.events.find(e=>e.id===record.ref);open(recordType(e.type),timeline([e]));}
 }
 function openCoverage() {
   const labels={recorded:['Suivi enregistré','Recorded bookkeeping'],assumed:['Hypothèse utilisateur','User-assumed model'],partial:['Couverture partielle','Partial coverage'],missing:['Non simulé','Not simulated']};
@@ -357,13 +298,22 @@ function renderScript() {
     <div class="notice">${tr('Le script indique les rôles autorisés. Il ne révèle ni les rôles distribués ni les bluffs. Les capacités ci-dessous sont des aides non officielles ; le Conteur tranche les règles.','The script lists allowed characters, not dealt characters or bluffs. These are unofficial reminders; the Storyteller resolves the rules.')}</div>
     ${game.script.warnings.length?`<details><summary>${tr('Remarques sur cet import','Import warnings')} (${game.script.warnings.length})</summary>${game.script.warnings.map(w=>`<p class="muted">${esc(w)}</p>`).join('')}</details>`:''}
     <label class="search">${tr('Chercher un rôle ou une capacité','Find a character or ability')}<input type="search" id="role-search" value="${esc(roleFilter)}" placeholder="${tr('Empathe, poison, nuit…','Empath, poison, night…')}"></label>
-    <div class="filters">${['all',...TEAMS,'traveller','fabled','unknown'].map(t=>button('role-team',t==='all'?tr('Tous','All'):teamName(t),roleTeam===t?'selected':'',`data-team="${t}"`)).join('')}</div><p id="role-count" class="role-count"></p><div id="role-list" class="role-list"></div>
+    ${compositionHtml()}
+    <div class="filters">${['all','free',...TEAMS,'traveller','fabled','unknown'].map(t=>button('role-team',t==='all'?tr('Tous','All'):t==='free'?tr('À attribuer','Unassigned'):teamName(t),roleTeam===t?'selected':'',`data-team="${t}"`)).join('')}</div><p id="role-count" class="role-count"></p><div id="role-list" class="role-list"></div>
     <details class="card spaced"><summary><h2>${tr('Trouver d’autres scripts','Find more scripts')}</h2></summary><p>${tr('Crée ou récupère un fichier JSON, puis importe-le ici. La bibliothèque en ligne n’est pas copiée et peut limiter l’accès automatique. Un import ne change pas un carnet en cours : il prépare une nouvelle partie.','Create or download a JSON file, then import it here. The online directory is not mirrored and may restrict automated access. Importing a script prepares a new game rather than changing your current notebook.')}</p><div class="row"><a href="https://script.bloodontheclocktower.com/" target="_blank" rel="noopener noreferrer">Script Tool</a> · <a href="https://botcscripts.com/" target="_blank" rel="noopener noreferrer">BOTC Scripts</a> · <a href="https://bloodontheclocktower.com/teensyville" target="_blank" rel="noopener noreferrer">Teensyville</a></div></details>`;
   drawRoles();$('#role-search').oninput=e=>{roleFilter=e.target.value;drawRoles();};
 }
+// Les rôles du script face aux effectifs de départ : ce qu'on a déjà supposé, ce qu'il reste à placer.
+function compositionHtml() {
+  const n=normalPlayers().length;
+  if(n<5||n>15)return '';
+  const expected=normalCounts(n),given=guessedByTeam(game,role);
+  return `<p class="composition" aria-label="${tr('Composition supposée','Assumed composition')}">${TEAMS.map(t=>`<span class="${given[t]>expected[t]?'over':''}"><b>${given[t]}/${expected[t]}</b> ${esc(teamName(t))}</span>`).join('')}</p>`;
+}
 function drawRoles() {
   const q=fold(roleFilter);
-  const list=roles().filter(r=>(roleTeam==='all'||r.team===roleTeam)&&fold(`${r.id} ${r.name.fr} ${r.name.en} ${r.ability.fr} ${r.ability.en}`).includes(q));
+  const who=guessIndex(game);
+  const list=roles().filter(r=>(roleTeam==='all'||(roleTeam==='free'?TEAMS.includes(r.team)&&!who.has(r.id):r.team===roleTeam))&&fold(`${r.id} ${r.name.fr} ${r.name.en} ${r.ability.fr} ${r.ability.en}`).includes(q));
   // Une recherche qui ne laisse que quelques roles s ouvre d elle meme : sinon
   // il faudrait un tap de plus pour lire precisement ce qu on cherchait.
   const open=list.length&&list.length<=4?' open':'';
@@ -374,7 +324,7 @@ function drawRoles() {
   // lignes : une fiche repliee tient alors sur une seule ligne de texte.
   const groups=[];
   for(const r of list){const g=groups.find(x=>x.team===r.team);if(g)g.items.push(r);else groups.push({team:r.team,items:[r]});}
-  const fiche=r=>`<details class="card role"${open}><summary><span class="role-name">${esc(loc(r.name))}</span></summary><p>${esc(loc(r.ability)||tr('Pas de fiche intégrée. Consulte le script fourni par le Conteur.','No bundled reminder. Consult your Storyteller’s script.'))}</p><p class="role-id">${esc(r.id)}</p><a href="https://wiki.bloodontheclocktower.com/${encodeURIComponent(r.name.en.replaceAll(' ','_'))}" target="_blank" rel="noopener noreferrer">${tr('Wiki officiel ↗','Official wiki ↗')}</a></details>`;
+  const fiche=r=>`<details class="card role${who.has(r.id)?' taken':''}"${open}><summary><span class="role-name">${esc(loc(r.name))}</span>${who.has(r.id)?`<span class="role-who">${esc(who.get(r.id).map(pname).join(', '))}</span>`:''}</summary><p>${esc(loc(r.ability)||tr('Pas de fiche intégrée. Consulte le script fourni par le Conteur.','No bundled reminder. Consult your Storyteller’s script.'))}</p><p class="role-id">${esc(r.id)}</p><a href="https://wiki.bloodontheclocktower.com/${encodeURIComponent(r.name.en.replaceAll(' ','_'))}" target="_blank" rel="noopener noreferrer">${tr('Wiki officiel ↗','Official wiki ↗')}</a></details>`;
   $('#role-list').innerHTML=groups.map(g=>`<h2 class="role-group">${esc(teamName(g.team))}<span>${g.items.length}</span></h2><div class="role-group-list">${g.items.map(fiche).join('')}</div>`).join('')||`<p class="empty">${tr('Aucun rôle trouvé.','No character found.')}</p>`;
 }
 function renderWorlds() {
@@ -623,13 +573,22 @@ function openNew(imported=null) {
   open(tr('Une nouvelle histoire','A new story'),`
     ${game?`<p class="notice">${tr('Ton carnet actuel sera remplacé. S’il est enregistré, une copie de secours sera conservée sur cet appareil ; exporte-le pour le garder durablement.','Your current notebook will be replaced. If saved, a backup is kept on this device; export it for a durable archive.')}</p>`:''}
     <form id="new-form"><label>${tr('Nom de la partie','Game title')}<input name="title" maxlength="120" value="${tr('Ma partie','My game')}" required></label>
-    <label>Script<select name="script">${imported?`<option value="import">${esc(imported.name)}</option>`:scripts.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>
+    <label>Script<select name="script">${imported?`<option value="import">${esc(imported.name)}</option>`:scripts.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')+`<option value="custom">${tr('✦ Scénario personnalisé : je choisis les rôles','✦ Custom scenario: I pick the characters')}</option>`}</select></label>
+    <div id="custom-box" class="custom-box" hidden></div>
     <label>${tr('Joueurs, un prénom par ligne, dans l’ordre des sièges','Players, one name per line, in seating order')}<textarea name="names" rows="7" placeholder="Alice&#10;Bruno&#10;Chloé&#10;David&#10;Emma" required></textarea></label>
     <p class="muted">${tr('5 à 20 joueurs. Au-delà de 15, les sièges supplémentaires sont des Voyageurs. Le premier siège te représente ; modifiable dans sa fiche.','5 to 20 players. Beyond 15, extra seats are Travellers. The first seat represents you; change it in the player card.')}</p>
     <div class="dialog-footer">${button('script-import',tr('Autre script JSON','Other JSON script'))}<button type="submit" class="primary">${tr('Créer le carnet','Create notebook')}</button></div></form>`,d=>{
+    let builder=null;
+    const pickScript=$('[name=script]',d),box=$('#custom-box',d);
+    pickScript.onchange=()=>{
+      const custom=pickScript.value==='custom';
+      box.hidden=!custom;
+      if(custom&&!builder)builder=scriptBuilder(box,{catalogue,tr,lang,esc,loc,fold,teamName});
+    };
     $('#new-form',d).onsubmit=e=>{e.preventDefault();try{
       const form=new FormData(e.target);const names=String(form.get('names')).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-      const s=imported || {...scripts.find(s=>s.id===form.get('script')),customRoles:[],warnings:[]};
+      if(form.get('script')==='custom'&&!builder?.count())throw new Error(tr('Coche au moins un rôle pour ton scénario.','Tick at least one character for your scenario.'));
+      const s=imported || (form.get('script')==='custom'?builder.script():{...scripts.find(s=>s.id===form.get('script')),customRoles:[],warnings:[]});
       replaceGame(newGame({name:s.name,roleIds:s.roleIds,customRoles:s.customRoles||[],warnings:s.warnings||[]},names,String(form.get('title')).trim()));
     }catch(err){error(err.message);}};
   });
@@ -676,60 +635,23 @@ function roundSummary() {
 function openEndgame() {
   const ordinary=normalPlayers();
   const alive=ordinary.filter(p=>p.alive);
-  const noClaim=game.players.filter(p=>!latestClaim(p.id));
+  const noClaim=game.players.filter(p=>!latestClaim(p.id)&&!p.guess);
   const kept=game.retained.filter(r=>!r.shared);
   open(tr('Derniers instants','Final moments'),`<p class="notice">${tr('Une liste de vérification, pas un conseil de jeu. Le carnet ne te dit pas qui exécuter.','A checklist, not game advice. The notebook does not tell you whom to execute.')}</p>
     ${roundSummary()}
     <h3>${tr('Avant la dernière exécution','Before the last execution')}</h3>
     <ul>
       <li>${alive.length?tr('Encore en vie : ','Still alive: ')+esc(alive.map(p=>p.name).join(', ')):tr('Aucun non-Voyageur en vie dans tes notes.','No living non-Traveller in your notes.')}</li>
-      <li>${noClaim.length?tr('Personne n’a noté de rôle pour : ','No character recorded for: ')+esc(noClaim.map(p=>p.name).join(', ')):tr('Chaque joueur a au moins une déclaration notée.','Every player has at least one recorded claim.')}</li>
+      <li>${noClaim.length?tr('Personne n’a noté de rôle pour : ','No character recorded for: ')+esc(noClaim.map(p=>p.name).join(', ')):tr('Chaque joueur a un rôle supposé ou annoncé.','Every player has an assumed or claimed character.')}</li>
       <li>${kept.length?tr('Tu gardes encore ','You are still holding ')+kept.length+tr(' information(s) non partagée(s).',' unshared piece(s) of information.'):tr('Tu n’as pas d’information gardée pour toi.','You have no information held back.')}</li>
       <li>${tr('Les morts votent encore une fois. Vérifie qui a encore son vote fantôme.','Dead players still vote once. Check who still has a ghost vote.')}</li>
       <li>${tr('Des conditions spéciales peuvent changer l’issue : Saint, Maire, Cerveau, Vortox… Consulte le script.','Special conditions can change the outcome: Saint, Mayor, Mastermind, Vortox… Check the script.')}</li>
     </ul>
-    <div class="row">${button('view',tr('Ouvrir le tableau','Open the board'),'primary',`data-view="overview"`)}</div>`);
+    <div class="row">${button('view',tr('Ouvrir le journal','Open the journal'),'primary',`data-view="journal"`)}</div>`);
 }
 function neighbourLabel(id) {
-  const n=seatNeighbours(game.players)[id];
-  const left=n?.left?.name||'',right=n?.right?.name||'';
-  return left||right?`${esc(left||'?')} ← → ${esc(right||'?')}`:tr('inconnus','unknown');
-}
-function openExpress(id='') {
-  open(tr('Il me parle','Talks to me'),`<p class="notice">${tr('Tout est facultatif. Enregistre même si tu n’as qu’un morceau : tu compléteras plus tard.','Everything is optional. Save even a fragment: you can complete it later.')}</p>
-    <form id="express-form">
-    <label>${tr('Qui te parle ?','Who is talking to you?')}<select name="source">${playerOptions(id||'',true)}</select></label>
-    <details ${id?'open':''}><summary>${tr('Il annonce un ou plusieurs rôles','They claim one or more characters')}</summary><div id="express-roles"></div></details>
-    <label>${tr('Ce qu’il dit','What they say')}<textarea name="text" maxlength="2000" rows="3" placeholder="${tr('Empathe 1 · a vu X ou Y · dit avoir été empoisonné…','Empath 1 · saw X or Y · says they were poisoned…')}"></textarea></label>
-    <details><summary>${tr('Ça concerne d’autres joueurs','It involves other players')}</summary><div id="express-players"></div></details>
-    <div class="form-grid"><label>${tr('Jour / nuit n°','Day / night number')}<input type="number" name="day" min="1" max="99" value="${game.day}" required></label><label>${tr('Moment','Phase')}<select name="phase"><option value="day" ${game.phase==='day'?'selected':''}>${tr('Jour','Day')}</option><option value="night" ${game.phase==='night'?'selected':''}>${tr('Nuit','Night')}</option></select></label></div>
-    <label class="check"><input type="checkbox" name="ask">${tr('À redemander plus tard','Ask about this later')}</label>
-    <div class="dialog-footer"><button type="submit" class="primary">${tr('Enregistrer','Save')}</button></div></form>`,d=>{
-      const roles=rolePicker($('#express-roles',d),[],modelRoles(),true);
-      const about=playerPicker($('#express-players',d),[],game.players);
-      $('[name=text]',d).focus();
-      $('#express-form',d).onsubmit=e=>{e.preventDefault();try{
-        const f=new FormData(e.target),source=String(f.get('source')||''),chosen=roles(),subjects=about(),body=String(f.get('text')).trim();
-        const day=Number(f.get('day')),phase=f.get('phase');
-        if(!source&&!chosen.length&&!subjects.length&&!body)throw new Error(tr('Ajoute au moins une information.','Add at least one piece of information.'));
-        change(g=>{
-          if(chosen.length&&source){
-            const c={id:uid(),playerId:source,roleIds:chosen,sourceId:source,visibility:'private',note:body.slice(0,2000),day,phase,weight:1};
-            g.claims.push(c);
-            event(g,'claim',tr('Rôles annoncés : ','Claimed characters: ')+roleLabel(chosen)+(body?'\n'+body:''),[source],source);
-            const ev=g.events.at(-1);ev.day=day;ev.phase=phase;ev.value=c.id;
-          }
-          if(body||subjects.length){
-            event(g,'info',body||tr('Information rapportée','Reported information'),subjects,source);
-            const ev=g.events.at(-1);ev.day=day;ev.phase=phase;
-          }
-          if(f.has('ask')){
-            event(g,'note',tr('À redemander : ','Ask later: ')+(body||roleLabel(chosen)||tr('point à clarifier','point to clarify')),subjects,source);
-            const ev=g.events.at(-1);ev.day=day;ev.phase=phase;
-          }
-        },tr('Noté','Saved'));close();
-      }catch(err){error(err.message);}};
-    });
+  const names=neighbourIds(game,id).map(x=>pname(x));
+  return names.length?names.map(esc).join(' · '):tr('inconnus','unknown');
 }
 function menuItem(action,icon,titleFr,titleEn,helpFr,helpEn,attrs='') {
   return `<button type="button" class="menu-item" data-action="${action}" ${attrs}><span class="menu-icon" aria-hidden="true">${icon}</span><span class="menu-text"><strong>${tr(titleFr,titleEn)}</strong><small>${tr(helpFr,helpEn)}</small></span></button>`;
@@ -739,11 +661,29 @@ function openTableMenu() {
     ${menuItem('roster','👥','Corriger la liste des joueurs','Fix the player list','Renommer, changer l’ordre des sièges, retirer ou remettre quelqu’un.','Rename, reorder seats, remove or restore someone.')}
     ${menuItem('mynotes','🕮','Ce que moi j’ai annoncé','What I claimed myself','Garder trace de mes propres versions, à qui je les ai dites, et des infos à retenir pour plus tard.','Track my own versions, who I told, and information to remember for later.')}
     ${menuItem('table-card','☉','Rassurer la table','Reassure the table','Un texte à montrer si quelqu’un s’inquiète de ce que tu fais sur ton téléphone.','A text to show if someone worries about what you are doing on your phone.')}
-    ${menuItem('glossary','📖','Vocabulaire','Vocabulary','Le sens des mots et des boutons du carnet : siège, indice, déclaration, ⚡.','What the notebook’s words and buttons mean: seat, clue, claim, ⚡.')}
+    ${menuItem('glossary','📖','Vocabulaire','Vocabulary','Le sens des mots du carnet : pastille de couleur, pinceau, rôle supposé, effet, lien.','What the notebook’s words mean: colour dot, brush, assumed character, effect, link.')}
+    ${menuItem('summary','📋','Copier un résumé','Copy a summary','Un texte avec chaque joueur : camp, rôle supposé, effets, dernière note.','A text with each player: side, assumed character, effects, latest note.')}
     ${menuItem('print-sheet','🖶','Imprimer une feuille','Print a sheet','Une version papier vierge, adaptée au nombre de joueurs, si tu préfères ranger le téléphone.','A blank paper version sized to your table, if you would rather put the phone away.')}
     ${menuItem('endgame','⌛','Récapitulatif de fin','Endgame recap','À la dernière journée : qui est vivant, combien de votes restent, ce qui peut changer l’issue.','On the last day: who is alive, how many votes remain, what can change the outcome.')}
     ${menuItem('coverage','⚠','Ce que le carnet ne fait pas','What the notebook does not do','Ses limites honnêtes : il ne simule pas le jeu et ne tranche aucune règle.','Its honest limits: it does not simulate the game and settles no rule.')}
   </div>`);
+}
+// Un résumé en texte brut, pour le coller dans une conversation privée ou le garder.
+function summaryText() {
+  const camp=c=>tr(...CAMP_NAMES[c]);
+  const lines=[`${game.title} · ${game.script.name} · ${phaseName()}`];
+  game.players.forEach((p,i)=>{
+    const fx=(p.effects||[]).map(e=>{const info=EFFECTS.find(x=>x.id===e.id);return info?tr(info.fr,info.en):'';}).filter(Boolean);
+    const notes=game.events.filter(e=>(e.type==='info'||e.type==='note')&&e.text&&(e.playerIds.includes(p.id)||e.sourceId===p.id));
+    const links=game.links.filter(l=>l.from===p.id).map(l=>describeLink(l,{name:pname,roleName:rname,lang,game}));
+    lines.push([`${String(i+1).padStart(2,'0')} ${p.name}${p.id===game.myId?` (${tr('moi','me')})`:''}`,camp(p.camp),p.guess?rname(p.guess):'?',p.alive?'':tr('mort','dead'),fx.join(', '),notes.length?`« ${notes.at(-1).text.replace(/\s+/g,' ').slice(0,120)} »`:'',...links].filter(Boolean).join(' · '));
+  });
+  return lines.join('\n');
+}
+function openSummary() {
+  open(tr('Résumé de la partie','Game summary'),`<p class="muted small">${tr('Du texte brut, à coller où tu veux. Rien ne quitte cet appareil tant que tu ne le colles pas toi-même.','Plain text, to paste wherever you like. Nothing leaves this device until you paste it yourself.')}</p><label class="sr-only" for="summary-text">${tr('Résumé','Summary')}</label><textarea id="summary-text" rows="12" readonly>${esc(summaryText())}</textarea><div class="dialog-footer">${button('close',tr('Fermer','Close'))}<button type="button" id="summary-copy" class="primary">${tr('Copier','Copy')}</button></div>`,d=>{
+    $('#summary-copy',d).onclick=async()=>{const area=$('#summary-text',d);try{await navigator.clipboard.writeText(area.value);toast(tr('Résumé copié','Summary copied'));}catch{area.select();toast(tr('Sélectionné : copie avec ton clavier','Selected: copy with your keyboard'));}};
+  });
 }
 function openTableCard() {
   open(tr('À montrer à ta table','Show this to your table'),`<div class="table-card">
@@ -760,72 +700,74 @@ function openTableCard() {
     </div>
     ${unlocked()&&estimatesOn()?`<div class="row">${button('toggle-estimates',tr('Couper l’aide','Switch the aid off'))}</div>`:''}`);
 }
-function openOnboarding() {
-  open(tr('Comment ça marche','How it works'),`
-    <ol class="onboarding">
-      <li><strong>${tr('Préviens ta table.','Tell your table.')}</strong><br>${tr('Une phrase suffit : « je prends des notes sur mon téléphone, comme sur papier ».','One sentence is enough: "I take notes on my phone, like on paper."')} ${button('table-card',tr('Carte à montrer','Card to show'))}</li>
-      <li><strong>${tr('Entre les joueurs dans l’ordre des sièges.','Enter the players in seating order.')}</strong><br>${tr('Le premier siège, c’est toi. Tu pourras tout corriger en cours de partie.','The first seat is you. You can correct everything mid-game.')}</li>
-      <li><strong>${tr('Quand un joueur te parle, touche ⚡ sur sa ligne.','When a player talks to you, tap ⚡ on their row.')}</strong><br>${tr('Note ses mots, même incomplets. 🗣 sert à noter le rôle qu’il annonce, ☠ à noter une mort.','Note their words, even incomplete. 🗣 records the character they claim, ☠ records a death.')}</li>
-      <li><strong>${tr('Reste dans la conversation.','Stay in the conversation.')}</strong><br>${tr('Le carnet sert à se souvenir, pas à réfléchir à ta place. Note vite, relève la tête, écoute.','The notebook is for remembering, not for thinking in your place. Note fast, look up, listen.')}</li>
-    </ol>
-    <div class="dialog-footer">${button('glossary',tr('Vocabulaire','Vocabulary'))}${button('close',tr('Compris','Got it'),'primary')}</div>`);
-}
-// Les mots que l'application emploie, dans l'ordre ou un nouveau joueur les rencontre.
-function openGlossary() {
-  const entries=list=>`<dl class="glossary">${list.map(([term,def])=>`<dt>${term}</dt><dd>${def}</dd>`).join('')}</dl>`;
-  open(tr('Vocabulaire','Vocabulary'),`
-    <h3 class="glossary-title">${tr('Les trois boutons de chaque joueur','The three buttons on each player')}</h3>
-    ${entries([
-      [tr('⚡ Il me parle','⚡ Talks to me'),tr('Un joueur te dit quelque chose. Note ses mots tels quels, même incomplets. Le grand bouton du bas fait la même chose et te laisse choisir le joueur.','A player tells you something. Note their words as they are, even incomplete. The big button at the bottom does the same and lets you pick the player.')],
-      [tr('🗣 Rôle annoncé','🗣 Claimed character'),tr('Un joueur dit quel est son rôle. Ce n’est pas une preuve : il peut se tromper ou mentir.','A player says which character they are. That is not proof: they may be mistaken or lying.')],
-      [tr('☠ Mort et ✚ Vivant','☠ Dead and ✚ Alive'),tr('Noter qu’un joueur est mort, ou qu’il est revenu en vie. Un joueur mort reste à la table : il peut parler et garde un vote, utilisable une seule fois.','Record that a player died, or came back to life. A dead player stays at the table: they can talk and keep one vote, usable once.')]
-    ])}
-    <h3 class="glossary-title">${tr('Les mots de la partie','Words from the game')}</h3>
-    ${entries([
-      [tr('Conteur','Storyteller'),tr('La personne qui anime la partie et connaît tous les secrets. Elle tranche les règles, jamais ce carnet.','The person who runs the game and knows every secret. They settle the rules, never this notebook.')],
-      [tr('Grimoire','Grimoire'),tr('Le plateau secret du Conteur, avec les vrais rôles de chacun. Ce carnet ne le voit jamais.','The Storyteller’s secret board, with everyone’s real character. This notebook never sees it.')],
-      [tr('Siège','Seat'),tr('Ta place autour de la table. Les sièges sont numérotés dans l’ordre, et le premier, c’est toi.','Your place around the table. Seats are numbered in order, and the first one is you.')],
-      [tr('Script','Script'),tr('La liste des rôles qui peuvent apparaître dans cette partie. Ce n’est pas la liste des rôles distribués.','The list of characters that may appear in this game. It is not the list of characters actually dealt.')],
-      [tr('Déclaration','Claim'),tr('Un rôle annoncé par un joueur, tel que tu l’as noté. Le Journal les range sous ce nom.','A character announced by a player, as you noted it. The Journal files them under this name.')],
-      [tr('Indice','Clue'),tr('Une information reçue : un chiffre, un nom, une phrase. Ce que tu notes avec ⚡ devient un indice, ou une déclaration si tu y ajoutes un rôle.','A piece of information received: a number, a name, a sentence. What you note with ⚡ becomes a clue, or a claim if you add a character.')],
-      [tr('Nomination','Nomination'),tr('Un joueur en désigne un autre pour le soumettre au vote. Le bouton Votes sert à noter qui a nommé qui.','A player picks another to put to a vote. The Votes button records who nominated whom.')],
-      [tr('Exécution','Execution'),tr('Le vote de fin de journée qui peut éliminer un joueur. Le bouton Votes sert à le noter.','The end-of-day vote that can eliminate a player. The Votes button records it.')],
-      [tr('Nuit','Night'),tr('Le bouton Nuit sert à noter les morts annoncées au matin.','The Night button records the deaths announced in the morning.')],
-      [tr('Jour 1 ›','Day 1 ›'),tr('Le moment de la partie. Touche-le pour passer au jour ou à la nuit suivants.','The current moment of the game. Tap it to move to the next day or night.')]
-    ])}
-    <h3 class="glossary-title">${tr('Les écrans','The screens')}</h3>
-    ${entries([
-      [tr('Joueurs','Players'),tr('La table : une ligne par joueur. Le Plan montre les mêmes sièges en cercle, et un siège touché révèle ses liens.','The table: one row per player. The Plan shows the same seats in a circle, and a tapped seat reveals its links.')],
-      [tr('Tableau','Board'),tr('Tout ce que tu as noté, relié : une chronologie et une grille joueurs et rôles.','Everything you noted, connected: a timeline and a players-by-characters grid.')],
-      [tr('Journal','Journal'),tr('Tes notes dans l’ordre, avec recherche et filtres.','Your notes in order, with search and filters.')],
-      [tr('Rôles','Characters'),tr('Le script de la partie et ce que fait chaque rôle.','The game’s script and what each character does.')]
-    ])}`);
-}
-function firstStepsSeen(){try{return localStorage.getItem('botc-player-first-steps')==='1';}catch{return true;}}
-let demoHintHidden=false;
-// Dans la démo, l'aide propose quoi essayer plutôt que d'expliquer des boutons : le visiteur arrive
-// dans un carnet déjà rempli et ne sait pas par où commencer. Son rejet ne compte pas pour la vraie partie.
-function demoTryHtml(){
-  if(demoHintHidden)return '';
-  return `<section class="first-steps" aria-labelledby="first-steps-title">
-    <div class="first-steps-head"><h2 id="first-steps-title">${tr('À essayer dans cette partie fictive','Try this in the sample game')}</h2>${button('first-steps-done',tr('Compris','Got it'),'ghost')}</div>
-    <ul class="try-list">
-      <li>${tr('Touche la ligne de Bruno pour voir tout ce que tu sais de lui.','Tap Bruno’s row to see everything you know about them.')}</li>
-      <li>${tr('Ouvre « Tableau », puis « Analyses » et « Conflits » : Bruno et Chloé annoncent tous deux Empathe.','Open “Board”, then “Analysis” and “Conflicts”: Bruno and Chloé both claim Empath.')}</li>
-      <li>${tr('Touche « Plan », puis le siège de Bruno : ses liens apparaissent.','Tap “Plan”, then Bruno’s seat: their links appear.')}</li>
-    </ul>
+function openOnboarding() {
+  open(tr('Comment ça marche','How it works'),`
+    <ol class="onboarding">
+      <li><strong>${tr('Préviens ta table.','Tell your table.')}</strong><br>${tr('Une phrase suffit : « je prends des notes sur mon téléphone, comme sur papier ».','One sentence is enough: "I take notes on my phone, like on paper."')} ${button('table-card',tr('Carte à montrer','Card to show'))}</li>
+      <li><strong>${tr('Entre les joueurs dans l’ordre des sièges.','Enter the players in seating order.')}</strong><br>${tr('Le premier siège, c’est toi. Tu pourras tout corriger en cours de partie.','The first seat is you. You can correct everything mid-game.')}</li>
+      <li><strong>${tr('Touche la pastille d’un joueur pour lui donner un camp.','Tap a player’s dot to give them a side.')}</strong><br>${tr('Neutre, bleu pour le bien, rouge pour le mal, orange pour un doute. Pour peindre plusieurs joueurs d’un coup, choisis un pinceau de couleur.','Neutral, blue for good, red for evil, orange for doubt. To paint several players at once, pick a colour brush.')}</li>
+      <li><strong>${tr('Touche un joueur pour ouvrir sa fiche.','Tap a player to open their sheet.')}</strong><br>${tr('Rôle supposé, effets (empoisonné, ivre…), notes et liens avec les autres joueurs sont au même endroit.','Assumed character, effects (poisoned, drunk…), notes and links with other players are in one place.')}</li>
+      <li><strong>${tr('Reste dans la conversation.','Stay in the conversation.')}</strong><br>${tr('Le carnet sert à se souvenir, pas à réfléchir à ta place. Note vite, relève la tête, écoute.','The notebook is for remembering, not for thinking in your place. Note fast, look up, listen.')}</li>
+    </ol>
+    <div class="dialog-footer">${button('glossary',tr('Vocabulaire','Vocabulary'))}${button('close',tr('Compris','Got it'),'primary')}</div>`);
+}
+// Les mots que l'application emploie, dans l'ordre ou un nouveau joueur les rencontre.
+function openGlossary() {
+  const entries=list=>`<dl class="glossary">${list.map(([term,def])=>`<dt>${term}</dt><dd>${def}</dd>`).join('')}</dl>`;
+  open(tr('Vocabulaire','Vocabulary'),`
+    <h3 class="glossary-title">${tr('Sur chaque joueur','On each player')}</h3>
+    ${entries([
+      [tr('Pastille de couleur','Colour dot'),tr('Ton avis sur le camp d’un joueur : neutre (anneau vide), bleu (rond) pour le bien, rouge (triangle) pour le mal, orange (losange) pour un doute. Un tap la fait passer à la suivante.','Your view of a player’s side: neutral (empty ring), blue (circle) for good, red (triangle) for evil, orange (diamond) for doubt. One tap moves to the next.')],
+      [tr('Pinceau','Brush'),tr('Choisis une couleur dans la barre sous le titre, puis touche plusieurs joueurs : ils prennent tous cette couleur. Le pinceau ☠ note des morts.','Pick a colour in the bar under the title, then tap several players: they all take that colour. The ☠ brush records deaths.')],
+      [tr('Rôle supposé','Assumed character'),tr('Le rôle que tu penses que le joueur a. C’est ta supposition : elle peut différer de ce qu’il annonce.','The character you think the player has. It is your guess: it may differ from what they claim.')],
+      [tr('Effets','Effects'),tr('Un pouvoir qui touche le joueur : empoisonné, ivre, protégé, mort la nuit, hors-la-loi… Le moment où tu l’as noté est affiché.','A power affecting the player: poisoned, drunk, protected, killed at night, outlaw… The moment you noted it is shown.')],
+      [tr('Lien','Link'),tr('Relie un joueur à d’autres selon son rôle : ses voisins pour l’Empathe, les deux joueurs désignés pour la Voyante, la Lavandière… Les liens se dessinent sur le plan.','Links a player to others according to their character: neighbours for the Empath, the two players picked for the Fortune Teller, the Washerwoman… Links are drawn on the plan.')],
+      [tr('Il m’a dit / À son sujet','Told me / About them'),tr('Deux sortes de notes : ce que le joueur t’a dit lui-même, ou une information le concernant.','Two kinds of notes: what the player told you, or information about them.')]
+    ])}
+    <h3 class="glossary-title">${tr('Les mots de la partie','Words from the game')}</h3>
+    ${entries([
+      [tr('Conteur','Storyteller'),tr('La personne qui anime la partie et connaît tous les secrets. Elle tranche les règles, jamais ce carnet.','The person who runs the game and knows every secret. They settle the rules, never this notebook.')],
+      [tr('Grimoire','Grimoire'),tr('Le plateau secret du Conteur, avec les vrais rôles de chacun. Ce carnet ne le voit jamais.','The Storyteller’s secret board, with everyone’s real character. This notebook never sees it.')],
+      [tr('Siège','Seat'),tr('Ta place autour de la table. Les sièges sont numérotés dans l’ordre, et le premier, c’est toi.','Your place around the table. Seats are numbered in order, and the first one is you.')],
+      [tr('Script','Script'),tr('La liste des rôles qui peuvent apparaître dans cette partie. Ce n’est pas la liste des rôles distribués.','The list of characters that may appear in this game. It is not the list of characters actually dealt.')],
+      [tr('Scénario personnalisé','Custom scenario'),tr('Un script que tu composes toi-même en cochant les rôles, quand il ne figure pas dans la liste.','A script you compose yourself by ticking characters, when it is not in the list.')],
+      [tr('Déclaration','Claim'),tr('Un rôle annoncé par un joueur, tel que tu l’as noté. Le Journal les range sous ce nom.','A character announced by a player, as you noted it. The Journal files them under this name.')],
+      [tr('Nomination','Nomination'),tr('Un joueur en désigne un autre pour le soumettre au vote. Le bouton Votes sert à noter qui a nommé qui.','A player picks another to put to a vote. The Votes button records who nominated whom.')],
+      [tr('Exécution','Execution'),tr('Le vote de fin de journée qui peut éliminer un joueur. Le bouton Votes sert à le noter.','The end-of-day vote that can eliminate a player. The Votes button records it.')],
+      [tr('Nuit','Night'),tr('Le bouton Nuit sert à noter les morts annoncées au matin.','The Night button records the deaths announced in the morning.')],
+      [tr('Jour 1 ›','Day 1 ›'),tr('Le moment de la partie. Touche-le, ou le centre du plan, pour passer au jour ou à la nuit suivants.','The current moment of the game. Tap it, or the centre of the plan, to move to the next day or night.')]
+    ])}
+    <h3 class="glossary-title">${tr('Les écrans','The screens')}</h3>
+    ${entries([
+      [tr('Joueurs','Players'),tr('La table, en plan (un cercle) ou en liste. C’est là que tu notes presque tout.','The table, as a plan (a circle) or a list. This is where you note almost everything.')],
+      [tr('Journal','Journal'),tr('Tes notes dans l’ordre, avec recherche et filtres. Tu peux y corriger une note.','Your notes in order, with search and filters. You can fix a note there.')],
+      [tr('Rôles','Characters'),tr('Le script de la partie, ce que fait chaque rôle, et ceux que tu n’as encore attribués à personne.','The game’s script, what each character does, and those you have not yet assigned to anyone.')]
+    ])}`);
+}
+function firstStepsSeen(){try{return localStorage.getItem('botc-player-first-steps')==='1';}catch{return true;}}
+let demoHintHidden=false;
+// Dans la démo, l'aide propose quoi essayer plutôt que d'expliquer des boutons : le visiteur arrive
+// dans un carnet déjà rempli et ne sait pas par où commencer. Son rejet ne compte pas pour la vraie partie.
+function demoTryHtml(){
+  if(demoHintHidden)return '';
+  return `<section class="first-steps" aria-labelledby="first-steps-title">
+    <div class="first-steps-head"><h2 id="first-steps-title">${tr('À essayer dans cette partie fictive','Try this in the sample game')}</h2>${button('first-steps-done',tr('Compris','Got it'),'ghost')}</div>
+    <ul class="try-list">
+      <li>${tr('Touche le siège de Bruno : sa fiche réunit son rôle supposé, ses effets, ses notes et ses liens.','Tap Bruno’s seat: their sheet gathers the assumed character, effects, notes and links.')}</li>
+      <li>${tr('Touche la petite forme colorée d’un siège : elle passe du neutre au bleu, au rouge, puis à l’orange.','Tap the small coloured shape on a seat: it goes from neutral to blue, red, then orange.')}</li>
+      <li>${tr('Choisis le pinceau rouge dans la barre, puis touche deux sièges : ils deviennent rouges d’un coup.','Pick the red brush in the bar, then tap two seats: both turn red at once.')}</li>
+    </ul>
+  </section>`;
+}
+// Aide posée sur la table elle-même, au lieu d'une fenêtre qui décrit un écran qu'on n'a pas encore vu.
+function firstStepsHtml(){
+  if(demo)return demoTryHtml();
+  if(firstStepsSeen())return '';
+  return `<section class="first-steps" aria-labelledby="first-steps-title">
+    <div class="first-steps-head"><h2 id="first-steps-title">${tr('Premiers pas','First steps')}</h2>${button('first-steps-done',tr('J’ai compris','Got it'),'ghost')}</div>
+    <p>${tr('Touche la forme colorée d’un joueur pour lui donner un camp, ou le joueur pour noter son rôle, ses effets, une note, un lien.','Tap a player’s coloured shape to give them a side, or the player to note their character, effects, a note, a link.')} ${button('table-card',tr('Prévenir ma table','Tell my table'),'link-button')}</p>
   </section>`;
-}
-// Aide posée sur la table elle-même, au lieu d'une fenêtre qui décrit un écran qu'on n'a pas encore vu.
-function firstStepsHtml(){
-  if(demo)return demoTryHtml();
-  if(firstStepsSeen())return '';
-  return `<section class="first-steps" aria-labelledby="first-steps-title">
-    <div class="first-steps-head"><h2 id="first-steps-title">${tr('Premiers pas','First steps')}</h2>${button('first-steps-done',tr('J’ai compris','Got it'),'ghost')}</div>
-    <p>${tr('Touche ⚡ quand un joueur te parle, 🗣 quand il annonce son rôle, ☠ quand il meurt. Note ses mots même incomplets.','Tap ⚡ when a player talks to you, 🗣 when they claim a character, ☠ when they die. Note their words even if incomplete.')}</p>
-    <div class="row">${button('table-card',tr('Prévenir ma table','Tell my table'))}${button('glossary',tr('Vocabulaire','Vocabulary'))}</div>
-  </section>`;
-}
+}
 function openPrintSheet() {
   open(tr('Feuille papier','Paper sheet'),`<p class="notice">${tr('Une feuille vierge adaptée au nombre réel de joueurs, à imprimer pour les tables qui préfèrent le papier. Tes notes ne sont pas incluses par défaut.','A blank sheet matching your real player count, to print for tables that prefer paper. Your notes are not included by default.')}</p>
     <label class="check"><input type="checkbox" id="print-include">${tr('Inclure ce que j’ai déjà noté','Include what I already recorded')}</label>
@@ -894,38 +836,41 @@ function openRetainEntry() {
       }catch(err){error(err.message);}};
     });
 }
-function openPlayer(id) {
-  const p=player(id), claims=game.claims.filter(c=>c.playerId===id).slice().reverse();
-  if(!game.players.some(p=>p.id===id)){
-    open(tr('Siège archivé : ','Archived seat: ')+p.name,`<p class="notice">${tr('Ses informations sont conservées, mais ce siège n’appartient plus à la liste active. Cela ne signifie pas que ce joueur est mort.','Information is preserved, but this seat is not in the active roster. This does not mean the player is dead.')}</p>${claims.map(c=>`<p>${esc(phaseName(c))} : ${esc(roleLabel(c.roleIds))}</p>`).join('')}${button('roster',tr('Restaurer depuis la liste','Restore from roster'))}`);
-    return;
-  }
-  open(p.name,`<div class="row spaced">${button('claim',tr('Déclaration','Claim'),'primary',`data-id="${id}"`)}${button('observe',tr('Indice','Clue'),'',`data-id="${id}"`)}${button('domain',tr('Rôles supposés','Assumed characters'),'',`data-id="${id}"`)}</div>
-    <form id="player-form"><div class="form-grid"><label>${tr('Prénom','Name')}<input name="name" maxlength="60" value="${esc(p.name)}" required></label><label>${tr('Mon appréciation','My judgement')}<select name="trust">${Object.entries(trustNames).map(([key,names])=>`<option value="${key}" ${p.trust===key?'selected':''}>${tr(...names)}</option>`).join('')}</select></label></div>
-    <div class="row"><label class="check"><input type="checkbox" name="me" ${game.myId===id?'checked':''}>${tr('C’est moi','This is me')}</label><label class="check"><input type="checkbox" name="traveller" ${p.traveller?'checked':''}>${tr('Voyageur','Traveller')}</label></div>
-    ${game.myId===id?`<label>${tr('Rôle qui m’a été montré au début','Character I was shown at the start')}<select name="myRole">${roleOptions(game.myRole)}</select></label>`:''}
-    <div class="dialog-footer"><button type="submit" class="primary">${tr('Enregistrer','Save')}</button></div></form>
-    ${unlocked()?`<details class="spaced"><summary>${tr('Estimations des rôles déclarés','Estimates for claimed characters')}</summary><div data-player-estimate="${id}">${playerPrediction(id)}</div></details>`:''}
-    <p class="muted small">${tr('Voisins de siège actuels','Current seat neighbours')} : ${esc(neighbourLabel(id))}</p>
-    <h3>${tr('État noté','Recorded state')}</h3><div class="row">${button('life',p.alive?tr('Noter sa mort','Record death'):tr('Noter son retour en vie','Record revival'),'',`data-id="${id}"`)}${!p.alive?button('ghost',p.ghost?tr('Vote fantôme utilisé','Ghost vote used'):tr('Rendre le vote fantôme','Restore ghost vote'),'',`data-id="${id}"`):''}${button('execution',tr('Noter une exécution','Record execution'),'',`data-id="${id}"`)}</div>
-    <p class="notice">${tr('Exécution ≠ mort. Les deux événements sont notés séparément.','Execution ≠ death. Record the two events separately.')}</p>
-    <h3>${tr('Historique des déclarations','Claim history')}</h3>${claims.map(c=>`<div class="issue"><small>${esc(phaseName(c))} · ${c.visibility==='private'?tr('Privé','Private'):tr('Public','Public')} · ${c.weight??1}×</small><p>${esc(roleLabel(c.roleIds))}</p><p class="muted">${esc(c.note)}</p><div class="row">${button('edit-claim',tr('Corriger / pondérer','Edit / weight'),'',`data-id="${c.id}"`)}${button('assume-claim',tr('Imposer au modèle','Restrict model'),'',`data-id="${c.id}"`)}${button('delete-claim',tr('Supprimer','Delete'),'',`data-id="${c.id}"`)}</div></div>`).join('')||`<p class="muted">${tr('Aucune déclaration.','No claims.')}</p>`}`,d=>{
-      $('#player-form',d).onsubmit=e=>{e.preventDefault();try{
-        const f=new FormData(e.target),traveller=f.has('traveller'),wasTraveller=p.traveller;
-        const apply=()=>{change(g=>{const q=g.players.find(x=>x.id===id);q.name=String(f.get('name')).trim();q.trust=f.get('trust');
-          if(f.has('me')){if(g.myId!==id)g.myRole='';g.myId=id;}else if(g.myId===id){g.myId='';g.myRole='';}
-          if(f.has('myRole')&&g.myId===id)g.myRole=f.get('myRole');
-          if(wasTraveller!==traveller)Object.assign(g,applyRoster(g,g.players.map(x=>({id:x.id,name:x.id===id?String(f.get('name')).trim():x.name,traveller:x.id===id?traveller:x.traveller}))));
-        },tr('Fiche enregistrée','Player saved'));close();};
-        if(wasTraveller===traveller){apply();return;}
-        const impact=rosterImpact(game,game.players.map(x=>({id:x.id,name:x.name,traveller:x.id===id?traveller:x.traveller})));
-        confirmAction(traveller?tr('Marquer ce joueur comme Voyageur ?','Mark this player as a Traveller?'):tr('Retirer le statut Voyageur ?','Remove Traveller status?'),
-          tr(`Les Voyageurs sont hors du modèle initial. Les effectifs de base seront recalculés et ${impact.affected} idée(s) touchée(s) seront désactivée(s). Le calcul restera suspendu jusqu’à ce que tu revoies la composition. L’historique est conservé.`,
-             `Travellers are outside the initial model. Base counts will be recalculated and ${impact.affected} affected idea(s) disabled. Calculation stays paused until you review the setup. History is preserved.`),
-          apply);
-      }catch(err){error(err.message);}};
-    });
-}
+function openPlayer(id) {
+  const p=player(id);
+  if(!game.players.some(x=>x.id===id)){
+    const claims=game.claims.filter(c=>c.playerId===id).slice().reverse();
+    open(tr('Siège archivé : ','Archived seat: ')+p.name,`<p class="notice">${tr('Ses informations sont conservées, mais ce siège n’appartient plus à la liste active. Cela ne signifie pas que ce joueur est mort.','Information is preserved, but this seat is not in the active roster. This does not mean the player is dead.')}</p>${claims.map(c=>`<p>${esc(phaseName(c))} : ${esc(roleLabel(c.roleIds))}</p>`).join('')}${button('roster',tr('Restaurer depuis la liste','Restore from roster'))}`);
+    return;
+  }
+  encoder.openSheet(id);
+}
+// Les réglages rares d'un joueur : nom, voyageur, « c'est moi », historique de ses annonces.
+function openPlayerEdit(id) {
+  const p=player(id), claims=game.claims.filter(c=>c.playerId===id).slice().reverse();
+  open(tr('Réglages : ','Settings: ')+p.name,`<form id="player-form"><label>${tr('Prénom','Name')}<input name="name" maxlength="60" value="${esc(p.name)}" required></label>
+    <div class="row"><label class="check"><input type="checkbox" name="me" ${game.myId===id?'checked':''}>${tr('C’est moi','This is me')}</label><label class="check"><input type="checkbox" name="traveller" ${p.traveller?'checked':''}>${tr('Voyageur','Traveller')}</label></div>
+    ${game.myId===id?`<label>${tr('Rôle qui m’a été montré au début','Character I was shown at the start')}<select name="myRole">${roleOptions(game.myRole)}</select></label>`:''}
+    <div class="dialog-footer">${button('player',tr('‹ Retour à la fiche','‹ Back to the sheet'),'',`data-id="${id}"`)}<button type="submit" class="primary">${tr('Enregistrer','Save')}</button></div></form>
+    ${unlocked()?`<details class="spaced"><summary>${tr('Estimations des rôles déclarés','Estimates for claimed characters')}</summary><div data-player-estimate="${id}">${playerPrediction(id)}</div></details>${button('domain',tr('Rôles supposés pour le calcul','Assumed characters for the calculation'),'',`data-id="${id}"`)}`:''}
+    <p class="muted small">${tr('Voisins vivants actuels','Current living neighbours')} : ${esc(neighbourLabel(id))}</p>
+    <h3>${tr('Historique des annonces','Claim history')}</h3>${claims.map(c=>`<div class="issue"><small>${esc(phaseName(c))} · ${c.visibility==='private'?tr('Privé','Private'):tr('Public','Public')} · ${c.weight??1}×</small><p>${esc(roleLabel(c.roleIds))}</p><p class="muted">${esc(c.note)}</p><div class="row">${button('edit-claim',tr('Corriger','Edit'),'',`data-id="${c.id}"`)}${unlocked()?button('assume-claim',tr('Imposer au modèle','Restrict model'),'',`data-id="${c.id}"`):''}${button('delete-claim',tr('Supprimer','Delete'),'',`data-id="${c.id}"`)}</div></div>`).join('')||`<p class="muted">${tr('Aucune annonce.','No claims.')}</p>`}`,d=>{
+      $('#player-form',d).onsubmit=e=>{e.preventDefault();try{
+        const f=new FormData(e.target),traveller=f.has('traveller'),wasTraveller=p.traveller;
+        const apply=()=>{change(g=>{const q=g.players.find(x=>x.id===id);q.name=String(f.get('name')).trim();
+          if(f.has('me')){if(g.myId!==id)g.myRole='';g.myId=id;}else if(g.myId===id){g.myId='';g.myRole='';}
+          if(f.has('myRole')&&g.myId===id)g.myRole=f.get('myRole');
+          if(wasTraveller!==traveller)Object.assign(g,applyRoster(g,g.players.map(x=>({id:x.id,name:x.id===id?String(f.get('name')).trim():x.name,traveller:x.id===id?traveller:x.traveller}))));
+        },tr('Fiche enregistrée','Player saved'));openPlayer(id);};
+        if(wasTraveller===traveller){apply();return;}
+        const impact=rosterImpact(game,game.players.map(x=>({id:x.id,name:x.name,traveller:x.id===id?traveller:x.traveller})));
+        confirmAction(traveller?tr('Marquer ce joueur comme Voyageur ?','Mark this player as a Traveller?'):tr('Retirer le statut Voyageur ?','Remove Traveller status?'),
+          tr(`Les Voyageurs sont hors du modèle initial. Les effectifs de base seront recalculés et ${impact.affected} idée(s) touchée(s) seront désactivée(s). Le calcul restera suspendu jusqu’à ce que tu revoies la composition. L’historique est conservé.`,
+             `Travellers are outside the initial model. Base counts will be recalculated and ${impact.affected} affected idea(s) disabled. Calculation stays paused until you review the setup. History is preserved.`),
+          apply);
+      }catch(err){error(err.message);}};
+    });
+}
 function openClaim(id,existing=null) {
   open(tr('1 rôle, 3 pour 3, ou plusieurs','1 character, 3-for-3, or several'),`<p class="notice">${tr('Coche tous les rôles que cette personne dit pouvoir incarner. La déclaration ne devient pas une certitude : un rôle extérieur au groupe reste toujours possible.','Check every character this person says they might be. A claim is not certainty: a character outside the group always remains possible.')}</p>
     <form id="claim-form"><label>${tr('Qui revendique ces rôles ?','Who claims these characters?')}<select name="player">${playerOptions(id||game.myId,false)}</select></label><div id="claim-picker"></div>
@@ -1130,7 +1075,7 @@ function openSettings() {
     <h3>${tr('Sur cet appareil','On this device')}</h3><div class="quick-actions">${game?button('export',tr('Exporter mon carnet privé (.json)','Export my private notebook (.json)')):''}${button('restore',tr('Restaurer un carnet (.json)','Restore a notebook (.json)'))}${button('backup',tr('Copies de secours et stockage','Backups and storage'))}${button('new',tr('Nouvelle partie','New game'))}${demo?button('leave-demo',tr('Quitter la démo','Leave demo')):button('demo',tr('Ouvrir la démo sans toucher au carnet','Open demo without touching notebook'))}</div>
     <h3>${tr('Installation et hors-ligne','Install and offline')}</h3><p id="offline-status" class="muted">${offlineText()}</p>${deferredInstall?button('install',tr('Installer l’application','Install app'),'primary'):''}${updateReady?button('apply-update',tr('Mettre à jour maintenant','Update now'),'primary'):''}${button('force-update',tr('Forcer la mise à jour (vider le cache)','Force update (clear cache)'))}<p class="muted">${tr('Sur iPhone : Safari → Partager → Sur l’écran d’accueil. Sur ordinateur / Android : menu du navigateur → Installer. Une première ouverture connectée est nécessaire.','On iPhone: Safari → Share → Add to Home Screen. Desktop / Android: browser menu → Install. A first online visit is required.')}</p>
     <p class="notice">${tr('Aucune donnée envoyée au Conteur ni à un service IA. Le stockage navigateur n’est pas chiffré par l’application ; le rideau masque l’écran mais ne verrouille pas l’appareil. Un export contient tes notes secrètes.','No data is sent to the Storyteller or an AI service. Browser storage is not encrypted by the app; the cover hides the screen but does not lock the device. Exports contain your secret notes.')}</p>
-    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 2.5</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
+    <p><a href="./guide.html" target="_blank" rel="noopener">${tr('Guide d’utilisation et limites','User guide and limitations')}</a></p><p class="footer-note"><span id="app-version">Carnet du Joueur 3.0</span> • Sébastien Place / @sebplace<br>CC BY-NC-SA 4.0 · ${tr('Indépendant de The Pandemonium Institute.','Independent of The Pandemonium Institute.')}</p>`,d=>{
     $('#language',d).onchange=e=>{lang=e.target.value;savePrefs();render();openSettings();};
     $('#theme',d).onchange=e=>{document.documentElement.dataset.theme=e.target.value;savePrefs();};
     $('#enrichment',d)?.addEventListener('change',e=>{try{change(g=>{g.settings.claimRoleEnrichment=e.target.checked;});}catch(err){error(err.message);}});
@@ -1196,8 +1141,13 @@ function launchDemo() {
   claims.forEach((r,i)=>{const c={id:uid(),playerId:ps[i].id,roleIds:[r],sourceId:ps[i].id,visibility:'private',note:'',day:1,phase:'day'};g.claims.push(c);event(g,'claim',tr('Déclare : ','Claims: ')+loc(catalogue.roles.find(x=>x.id===r).name),[ps[i].id],ps[i].id,c.id);});
   g.myRole='washerwoman';
   event(g,'info',tr('Bruno déclare Empathe et annonce le chiffre 1 : un de ses deux voisins vivants serait maléfique. À vérifier : qui était vivant à côté de lui cette nuit-là.','Bruno claims Empath and announces the number 1: one of his two living neighbours would be evil. Check who was alive beside him that night.'),[ps[0].id,ps[2].id],ps[1].id,'1');
-  event(g,'note',tr('Exemple fictif. Le modèle est volontairement très restreint pour montrer deux mondes complets. Les déclarations n’ont pas été traitées comme des faits.','Fictional example. The model is deliberately narrow to show two complete worlds. Claims have not been treated as facts.'));
-  ps[2].trust='watch';ps[5].trust='suspect';
+  event(g,'note',tr('Exemple fictif : les joueurs, les rôles, les couleurs et les liens de cette partie sont inventés pour montrer l’application.','Fictional example: the players, characters, colours and links in this game are made up to show the app.'));
+  Object.assign(ps[0],{camp:'good',guess:'washerwoman'});
+  Object.assign(ps[1],{camp:'doubt',guess:'empath',effects:[{id:'poisoned',day:1,phase:'night'}]});
+  Object.assign(ps[2],{camp:'doubt',guess:'empath'});
+  Object.assign(ps[5],{camp:'evil',guess:'poisoner'});
+  g.links.push({id:uid(),kind:'neighbours',from:ps[1].id,to:[],roleId:'',result:'1',note:'',day:1,phase:'night'},{id:uid(),kind:'oneof',from:ps[0].id,to:[ps[2].id,ps[3].id],roleId:'chef',result:'',note:'',day:1,phase:'night'});
+  event(g,'info',tr('Dit qu’il n’a pas dormi de la nuit.','Says they did not sleep all night.'),[ps[1].id]);
   replaceGame(g,true);
 }
 function cover(explicit=false) {
@@ -1214,12 +1164,12 @@ function uncover() {
   if(screen.open)screen.close();
   try{sessionStorage.removeItem('botc-player-covered');}catch{}
   if($('#dialog').open)$('#dialog').querySelector('[data-action=close]')?.focus();
-  else ($('#privacy')||$('.thumb-hide'))?.focus();
+  else $('#privacy')?.focus();
 }
 const actions={
-  close,new:()=>openNew(),demo:launchDemo,player:el=>openPlayer(el.dataset.id),
+  close,summary:openSummary,new:()=>openNew(),demo:launchDemo,player:el=>openPlayer(el.dataset.id),'seat-tap':el=>{const id=el.dataset.id;if(!encoder.brush()&&game.players.some(p=>p.id===id))planSeat=id;encoder.tapPlayer(id);},'player-edit':el=>openPlayerEdit(el.dataset.id),'note-edit-dialog':el=>encoder.noteEditDialog(el.dataset.id),...encoder.actions,
   roster:openRoster,coverage:openCoverage,
-  mask:()=>cover(true),express:el=>openExpress(el.dataset.id||''),
+  mask:()=>cover(true),
   mynotes:openMyNotes,'self-add':openSelfEntry,'retain-add':openRetainEntry,endgame:openEndgame,'table-card':openTableCard,onboarding:openOnboarding,glossary:openGlossary,
   'first-steps-done':el=>{if(demo)demoHintHidden=true;else{try{localStorage.setItem('botc-player-first-steps','1');}catch{}}el.closest('.first-steps')?.remove();$('#main')?.focus({preventScroll:true});},
   'self-delete':el=>change(g=>{g.selfLog=g.selfLog.filter(x=>x.id!==el.dataset.id);})||openMyNotes(),
@@ -1257,16 +1207,20 @@ const actions={
   install:async()=>{if(!deferredInstall)return;await deferredInstall.prompt();deferredInstall=null;openSettings();}
 };
 document.addEventListener('click',async e=>{
+  const badge=e.target.closest('[data-plan-camp]');
+  if(badge){encoder.cycleCamp(badge.dataset.planCamp);return;}
+  if(e.target.closest('[data-plan-clear]')){planSeat='';drawPlan();return;}
   const seat=e.target.closest('[data-plan-seat]');
-  if(seat){planSeat=planSeat===seat.dataset.planSeat?'':seat.dataset.planSeat;drawPlan();return;}
+  if(seat){const id=seat.dataset.planSeat;if(!encoder.brush())planSeat=id;encoder.tapPlayer(id);if(!encoder.brush())drawPlan();return;}
   const el=e.target.closest('[data-action]');if(!el)return;
   try{await actions[el.dataset.action]?.(el);}catch(err){error(err.message);}
 });
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter'&&e.key!==' ')return;
+  const badge=e.target.closest?.('[data-plan-camp]');
+  if(badge){e.preventDefault();encoder.cycleCamp(badge.dataset.planCamp);return;}
   const seat=e.target.closest?.('[data-plan-seat]');if(!seat)return;
-  e.preventDefault();planSeat=planSeat===seat.dataset.planSeat?'':seat.dataset.planSeat;drawPlan();
-  $(`[data-plan-seat="${CSS.escape(seat.dataset.planSeat)}"]`)?.focus();
+  e.preventDefault();const id=seat.dataset.planSeat;if(!encoder.brush())planSeat=id;encoder.tapPlayer(id);if(!encoder.brush())drawPlan();
 });
 $('#settings').onclick=openSettings;$('#privacy').onclick=()=>cover(true);$('#uncover').onclick=uncover;
 $('#undo').onclick=()=>{
@@ -1282,7 +1236,7 @@ $('#undo').onclick=()=>{
     toast(tr('Dernière modification annulée','Last change undone'));
   }catch(e){error(e.message);}
 };
-$('#dialog').addEventListener('close',()=>{if($('#cover').open)return; if(returnFocus?.isConnected&&!returnFocus.inert)returnFocus.focus();});
+$('#dialog').addEventListener('close',()=>{encoder.closeSheet();if($('#cover').open)return; if(returnFocus?.isConnected&&!returnFocus.inert)returnFocus.focus();});
 $('#dialog').addEventListener('cancel',e=>{e.preventDefault();close();});
 document.addEventListener('keydown',e=>{if($('#cover').open&&(e.key==='Escape'||e.key==='Tab')){e.preventDefault();$('#uncover').focus();return;}if(e.key==='Escape'&&!$('#dialog').open){cover(true);}});
 $('#cover').addEventListener('cancel',e=>e.preventDefault());

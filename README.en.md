@@ -10,9 +10,10 @@ Player's Notebook is a private offline notebook for recording, organising and cr
 
 ## What it does
 
-- creates a 5-to-20-player seating roster, with a printable paper sheet sized to the actual player count;
-- records claims, 3-for-3s, clues, notes, executions, ballots, night deaths, delayed information and what you yourself claimed;
-- links and visualises your notes (seats, round table, timeline, link graph, player-by-character grid, contradiction map) and supports search;
+- creates a 5-to-20-player table from a catalogue script, an imported script or **a custom scenario whose characters you tick**;
+- is driven from the **plan** (the circle) and the **list**: one tap on a player’s coloured shape gives them a side (neutral, blue, red, orange), and a brush colours several players at once;
+- a **sheet per player** gathers side, assumed character, effects (poisoned, drunk, protected…), editable notes and links that depend on the character (the Empath’s neighbours, players picked…), drawn on the plan;
+- also records claims, 3-for-3s, executions, ballots, night deaths, delayed information and what you yourself claimed, in a journal where a note can be fixed;
 - runs locally in the browser and can be installed as a PWA.
 
 ## What it does not do

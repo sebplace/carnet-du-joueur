@@ -1,11 +1,12 @@
 export const STORAGE_KEY = 'botc-player-notebook-v1';
 export const BACKUP_KEY = 'botc-player-notebook-backup-v1';
 export const BACKUP_KEYS = [BACKUP_KEY, 'botc-player-notebook-backup-v2', 'botc-player-notebook-backup-v3'];
-export const SCHEMA_VERSION = 5;
-export const LIMITS = Object.freeze({players:20, archived:60, claims:1000, events:2000, scenarios:8, save:8_000_000});
+export const SCHEMA_VERSION = 6;
+export const LIMITS = Object.freeze({players:20, archived:60, claims:1000, events:2000, links:400, scenarios:8, save:8_000_000});
 export const TEAMS = ['townsfolk', 'outsider', 'minion', 'demon'];
 export const uid = () => crypto.randomUUID();
 import {validateSelfLog, validateRetained} from './mynotes.js';
+import {CAMPS, EFFECT_IDS, LINK_TEMPLATES, campFromTrust} from './encode.js';
 const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
 function fail(message) { throw new Error(message); }
 function object(v) { return v && typeof v === 'object' && !Array.isArray(v); }
@@ -46,15 +47,18 @@ export function newScenario(name, n) {
 }
 export function newGame(script, names, title = 'Ma partie') {
   if (names.length < 5 || names.length > 20) fail('5 à 20 joueurs / 5 to 20 players');
-  const players = names.map((name, i) => ({id:uid(),name:name.trim() || `#${i+1}`,alive:true,ghost:true,traveller:i>=15,trust:'unknown'}));
+  const players = names.map((name, i) => ({id:uid(),name:name.trim() || `#${i+1}`,alive:true,ghost:true,traveller:i>=15,trust:'unknown',camp:'neutral',guess:'',effects:[]}));
   const scenario = newScenario('Hypothèse A', Math.min(15, players.length));
-  return {version:SCHEMA_VERSION,id:uid(),title,script:structuredClone(script),players,archivedPlayers:[],rosterReviewRequired:false,day:1,phase:'day',claims:[],events:[],scenarios:[scenario],activeScenario:scenario.id,myId:players[0].id,myRole:'',createdAt:new Date().toISOString(),estimateConsent:false,settings:{showEstimates:false,captureMode:true,claimRoleEnrichment:true,unlocked:false},selfLog:[],retained:[]};
+  return {version:SCHEMA_VERSION,id:uid(),title,script:structuredClone(script),players,archivedPlayers:[],rosterReviewRequired:false,day:1,phase:'day',claims:[],events:[],links:[],scenarios:[scenario],activeScenario:scenario.id,myId:players[0].id,myRole:'',createdAt:new Date().toISOString(),estimateConsent:false,settings:{showEstimates:false,captureMode:true,claimRoleEnrichment:true,unlocked:false},selfLog:[],retained:[]};
 }
 export function validateGame(raw) {
-  if (!object(raw) || ![1,2,3,4,5].includes(raw.version)) fail('Format Carnet du Joueur non reconnu / Unrecognized player notebook format');
+  if (!object(raw) || ![1,2,3,4,5,6].includes(raw.version)) fail('Format Carnet du Joueur non reconnu / Unrecognized player notebook format');
   const normalizePlayer=p=>{
     if (!object(p)) fail('Joueur invalide / Invalid player');
-    return {id:id(p.id),name:name(p.name,60),alive:bool(p.alive),ghost:bool(p.ghost),traveller:bool(p.traveller),trust:choice(p.trust,['unknown','trusted','watch','suspect'])};
+    const trust=choice(p.trust,['unknown','trusted','watch','suspect']);
+    const effects=list(p.effects??[],EFFECT_IDS.length).map(e=>{if(!object(e))fail('Effet invalide / Invalid effect');return {id:choice(e.id,EFFECT_IDS),day:integer(e.day??1,1,99),phase:choice(e.phase??'day',['day','night'])};});
+    unique(effects.map(e=>e.id));
+    return {id:id(p.id),name:name(p.name,60),alive:bool(p.alive),ghost:bool(p.ghost),traveller:bool(p.traveller),trust,camp:choice(p.camp??campFromTrust(trust),CAMPS),guess:p.guess?id(p.guess):'',effects};
   };
   const players = list(raw.players,LIMITS.players).map(normalizePlayer);
   const archivedPlayers=list(raw.archivedPlayers??[],LIMITS.archived).map(normalizePlayer);
@@ -72,6 +76,19 @@ export function validateGame(raw) {
   if (!script.roleIds.length || script.customRoles.some(r=>!script.roleIds.includes(r.id))) fail('Liste de rôles incohérente / Inconsistent roles');
   const rid = v => { id(v); if (!script.roleIds.includes(v)) fail('Rôle absent du script / Role not on script'); return v; };
   const time = v => ({day:integer(v.day,1,99),phase:choice(v.phase,['day','night'])});
+  for (const p of [...players,...archivedPlayers]) if (p.guess) rid(p.guess);
+  const links = list(raw.links ?? [],LIMITS.links).map(l => {
+    if (!object(l)) fail('Lien invalide / Invalid link');
+    const kind = choice(l.kind,Object.keys(LINK_TEMPLATES)), t = LINK_TEMPLATES[kind];
+    const to = unique(list(l.to ?? [],6).map(pid));
+    const from = pid(l.from);
+    if (to.length < t.min || to.length > t.max || to.includes(from)) fail('Lien invalide / Invalid link');
+    const result = text(l.result ?? '',40);
+    if (t.result === 'yesno' && !['','yes','no'].includes(result)) fail('Réponse invalide / Invalid answer');
+    if (t.result === 'number' && !/^[0-9]?$/.test(result)) fail('Nombre invalide / Invalid number');
+    return {id:id(l.id),kind,from,to,roleId:l.roleId ? rid(l.roleId) : '',result,note:text(l.note ?? '',300),...time(l)};
+  });
+  unique(links.map(l => l.id));
   const claims = list(raw.claims,LIMITS.claims).map(c => ({
     id:id(c.id),playerId:pid(c.playerId),roleIds:unique(list(c.roleIds,10).map(rid)),sourceId:optionalPid(c.sourceId),
     visibility:choice(c.visibility,['private','public']),note:text(c.note),weight:choice(c.weight??1,[1,2,5,20]),...time(c)
@@ -124,7 +141,7 @@ export function validateGame(raw) {
     if (!archivedIds.has(selfId)) fail('Identité archivée invalide / Invalid archived identity');
     archivedSelf = {playerId:selfId,myRole:raw.archivedSelf.myRole ? rid(raw.archivedSelf.myRole) : ''};
   }
-  return {version:SCHEMA_VERSION,id:id(raw.id),title:name(raw.title,120),script,players,archivedPlayers,rosterReviewRequired:bool(raw.rosterReviewRequired??false),...time(raw),claims,events,scenarios,activeScenario:raw.activeScenario,myId:optionalPid(raw.myId),myRole:raw.myRole ? rid(raw.myRole) : '',createdAt:text(raw.createdAt,40),estimateConsent:bool(raw.estimateConsent??false),
+  return {version:SCHEMA_VERSION,id:id(raw.id),title:name(raw.title,120),script,players,archivedPlayers,rosterReviewRequired:bool(raw.rosterReviewRequired??false),...time(raw),claims,events,links,scenarios,activeScenario:raw.activeScenario,myId:optionalPid(raw.myId),myRole:raw.myRole ? rid(raw.myRole) : '',createdAt:text(raw.createdAt,40),estimateConsent:bool(raw.estimateConsent??false),
     settings:{showEstimates:bool(raw.settings?.showEstimates??false),captureMode:bool(raw.settings?.captureMode??true),claimRoleEnrichment:bool(raw.settings?.claimRoleEnrichment??true),unlocked:bool(raw.settings?.unlocked??false)},
     selfLog:validateSelfLog(raw.selfLog??[],{playerIds:pids,roleIds:new Set(script.roleIds)}),
     retained:validateRetained(raw.retained??[],{roleIds:new Set(script.roleIds)}),...(archivedSelf ? {archivedSelf} : {})};
