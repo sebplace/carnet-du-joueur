@@ -534,6 +534,7 @@ body:has(#nav[hidden]) .app-footer-bar{display:none}
 
 .plan-seat-name{fill:var(--cp-text);font-weight:700;paint-order:stroke;stroke:var(--cp-bg);stroke-width:3px;stroke-linejoin:round}
 
+.plan-seat-initials{fill:var(--cp-text);font-family:var(--font-display);font-weight:700;paint-order:stroke;stroke:var(--cp-bg);stroke-width:3px;stroke-linejoin:round}
 .plan-seat-role{fill:var(--cp-accent);font-family:var(--font-display);font-weight:700;paint-order:stroke;stroke:var(--cp-bg);stroke-width:3px;stroke-linejoin:round}
 
 .plan-seat-mark{fill:var(--cp-text-soft);font-weight:600;paint-order:stroke;stroke:var(--cp-bg);stroke-width:2px;stroke-linejoin:round}

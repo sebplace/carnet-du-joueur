@@ -402,3 +402,25 @@ test('à dix joueurs et plus, le rôle supposé n’est plus écrit sur le cadra
   assert.ok(!svg.includes('>Empathe<'));
   assert.match(svg, /rôle supposé Empathe/);
 });
+test('au-delà de quatorze joueurs, le plan écrit les initiales, avec le numéro si deux joueurs restent indiscernables', () => {
+  const names = ['Alice', 'Bruno', 'Chloé', 'David', 'Emma', 'Farid', 'Gaëlle', 'Hugo', 'Inès', 'Jules', 'Karim', 'Léa', 'Marc', 'Nina', 'Omar', 'Anouk', 'Ben', 'Béa', 'Ben', 'Éric'];
+  const {svg} = render(validateGame(newGame(SCRIPT, names)), {size: 320});
+  const initials = [...svg.matchAll(/class="plan-seat-initials"[^>]*font-size:([\d.]+)px">([^<]*)</g)].map(m => ({font: +m[1], text: m[2]}));
+  assert.equal(initials.length, 20, 'une étiquette par siège');
+  assert.ok(!svg.includes('class="plan-seat-name"'), 'les noms complets ne sont plus écrits');
+  assert.ok(initials.every(i => i.font >= 14), 'les initiales restent lisibles');
+  assert.equal(initials[0].text, 'AL', 'Alice et Anouk partagent le A : deux lettres');
+  assert.equal(initials[15].text, 'AN');
+  assert.equal(initials[1].text, 'BR', 'Bruno, Ben, Béa et Ben partagent le B');
+  assert.equal(initials[11].text, 'L', 'Léa est seule avec son L');
+  assert.equal(initials[16].text, 'B17', 'deux joueurs nommés Ben restent indiscernables : le numéro de siège les sépare');
+  assert.equal(initials[18].text, 'B19');
+  assert.notEqual(initials[16].text, initials[18].text, 'deux Ben ne portent jamais la même étiquette');
+  assert.ok(svg.includes('Initiales à ce nombre de joueurs'), 'le plan explique ce qu’il affiche');
+});
+
+test('jusqu’à quatorze joueurs le plan garde les noms et n’écrit aucune initiale', () => {
+  const {svg} = render(validateGame(newGame(SCRIPT, Array.from({length: 14}, (_, i) => `Joueur${i}`))), {});
+  assert.ok(svg.includes('plan-seat-name'));
+  assert.ok(!svg.includes('plan-seat-initials'));
+});

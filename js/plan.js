@@ -26,7 +26,7 @@ const TEXT = {
   connectionsOf: ['Liens', 'Connections of'],
   noSelection: ['Aucun siège sélectionné.', 'No seat selected.'],
   noLinks: ['Aucun lien pour ce siège.', 'No connection for this seat.'],
-  namesHidden: ['Noms masqués à ce nombre de joueurs : voir la liste et la fiche.', 'Names hidden at this player count: see the list and the sheet.'],
+  namesHidden: ['Initiales à ce nombre de joueurs : les noms complets sont dans la liste et la fiche.', 'Initials at this player count: full names are in the list and the sheet.'],
   legend: ['Lecture des traits', 'Reading the lines'],
   kindTold: ['communiqué', 'told'],
   kindVoted: ['a voté', 'voted'],
@@ -74,6 +74,23 @@ function truncateWords(value, max) {
 function pointAt(index, total, radius, center) {
   const angle = -Math.PI / 2 + (Math.PI * 2 * index / Math.max(1, total));
   return {angle, x: center + Math.cos(angle) * radius, y: center + Math.sin(angle) * radius};
+}
+
+// Initiales : une lettre, deux en cas de doublon, le numéro du siège si deux joueurs restent indiscernables.
+function initialsOf(seats) {
+  const letters = seat => [...String(seat.name).trim().normalize('NFC')].filter(ch => /\p{L}|\p{N}/u.test(ch));
+  const make = (seat, n) => letters(seat).slice(0, n).join('').toLocaleUpperCase();
+  const out = new Map();
+  for (const seat of seats) out.set(seat.id, make(seat, 1) || String(seat.seat));
+  for (const n of [2, 3]) {
+    const counts = new Map();
+    for (const v of out.values()) counts.set(v, (counts.get(v) || 0) + 1);
+    for (const seat of seats) if (counts.get(out.get(seat.id)) > 1) out.set(seat.id, make(seat, n) || String(seat.seat));
+  }
+  const counts = new Map();
+  for (const v of out.values()) counts.set(v, (counts.get(v) || 0) + 1);
+  for (const seat of seats) if (counts.get(out.get(seat.id)) > 1) out.set(seat.id, `${make(seat, 1)}${seat.seat}`);
+  return out;
 }
 
 function nodeRadius(count, k) { return k * (count <= 9 ? 26 : count <= 14 ? 21 : 16); }
@@ -317,11 +334,11 @@ export function renderPlan(model, options = {}) {
   const nameLimit = model.count <= 10 ? 9 : 6;
   const roleLimit = 11;
 
+  const initials = showNames ? null : initialsOf(model.seats);
   const spots = new Map();
   const labelObstacles = [];
   for (const seat of model.seats) {
-    if (!showNames) continue;
-    const name = truncate(seat.name, nameLimit);
+    const name = showNames ? truncate(seat.name, nameLimit) : initials.get(seat.id);
     const role = showRoles && seat.guess ? truncate(roleName(seat.guess), roleLimit) : '';
     const w = Math.max(nameSize * 0.56 * name.length, roleSize * 0.52 * role.length);
     const h = nameSize * 1.1 + (role ? roleSize * 1.15 : 0);
@@ -355,7 +372,7 @@ export function renderPlan(model, options = {}) {
       seat.id === model.selectedId ? 'plan-selected' : ''].filter(Boolean).join(' ');
     const nodeClasses = ['plan-node', `plan-camp-${esc(seat.camp)}`, linked ? '' : 'plan-dim'].filter(Boolean).join(' ');
     const spot = spots.get(seat.id);
-    const nameLine = spot ? `<text class="plan-seat-name" x="${spot.dx.toFixed(1)}" y="${(spot.dy - (spot.role ? roleSize * 0.5 : 0)).toFixed(1)}" text-anchor="middle" dominant-baseline="central" style="font-size:${nameSize.toFixed(1)}px">${esc(spot.name)}</text>` : '';
+    const nameLine = spot ? `<text class="${showNames ? 'plan-seat-name' : 'plan-seat-initials'}" x="${spot.dx.toFixed(1)}" y="${(spot.dy - (spot.role ? roleSize * 0.5 : 0)).toFixed(1)}" text-anchor="middle" dominant-baseline="central" style="font-size:${nameSize.toFixed(1)}px">${esc(spot.name)}</text>` : '';
     const roleLine = spot?.role ? `<text class="plan-seat-role" x="${spot.dx.toFixed(1)}" y="${(spot.dy + nameSize * 0.55).toFixed(1)}" text-anchor="middle" dominant-baseline="central" style="font-size:${roleSize.toFixed(1)}px">${esc(spot.role)}</text>` : '';
     const markers = showNames || !seatMarkers(seat) ? '' : `<text class="plan-seat-mark" y="${(nodeR * 0.5).toFixed(1)}" text-anchor="middle" aria-hidden="true" style="font-size:${markFont}px">${esc(seatMarkers(seat))}</text>`;
     const deadCross = seat.alive ? '' : `<line class="plan-dead-cross" x1="${(-nodeR * 0.6).toFixed(1)}" y1="${(-nodeR * 0.6).toFixed(1)}" x2="${(nodeR * 0.6).toFixed(1)}" y2="${(nodeR * 0.6).toFixed(1)}" aria-hidden="true"></line>`;

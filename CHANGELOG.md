@@ -2,6 +2,13 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 3.0.1
+
+- Au-dela de 14 joueurs, le plan ecrit les initiales pres des sieges au lieu de ne
+  garder que les numeros : une lettre, deux en cas de doublon, le numero de siege
+  si deux joueurs restent indiscernables. Les noms complets restent dans la liste
+  et la fiche.
+
 ## 3.0.0
 
 Retour d'un joueur apres une vraie partie : l'application etait « beaucoup trop
