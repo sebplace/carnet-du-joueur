@@ -10,6 +10,10 @@ Player's Notebook is a private offline notebook for recording, organising and cr
 
 ## What it does
 
+The Victorian Gothic appearance preserves the notebook's existing features.
+**Plan, List and Notes** provide access to the table and the existing Journal.
+On narrow phones, controls wrap onto two rows.
+
 - creates a 5-to-20-player table from a catalogue script, an imported script or **a custom scenario whose characters you tick**;
 - is driven from the **plan** (the circle) and the **list**: one tap on a player’s coloured shape gives them a side (neutral, blue, red, orange), and a brush colours several players at once;
 - a **sheet per player** gathers side, assumed character, effects (poisoned, drunk, protected…), editable notes and links that depend on the character (the Empath’s neighbours, players picked…), drawn on the plan;

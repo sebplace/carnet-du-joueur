@@ -1,0 +1,269 @@
+/* Le Cabinet des murmures : couche visuelle, sans remplacement des fonctions
+   du carnet. Les commandes, icones et couleurs de camp restent presentes. */
+html[data-theme="dark"] {
+  --cp-bg: #17111b;
+  --cp-bg-elevated: #201823;
+  --cp-surface: #291f2d;
+  --cp-surface-soft: #342739;
+  --cp-border: #9b8195;
+  --cp-border-strong: #b39ba6;
+  --cp-hairline: rgba(224, 191, 143, .25);
+  --cp-text: #f4ebdc;
+  --cp-text-muted: #c6b6c1;
+  --cp-text-soft: #d4c2cb;
+  --cp-accent: #e0bf8f;
+  --cp-accent-hover: #f2d5a6;
+  --cp-accent-soft: rgba(224, 191, 143, .13);
+  --cp-accent-fg: #241721;
+  --cp-brass: #c4a06c;
+  --cp-brass-wash: rgba(196, 160, 108, .10);
+  --cp-shadow: 0 20px 60px rgba(8, 4, 12, .65);
+  --cp-overlay: rgba(16, 9, 20, .90);
+  --cp-panel: rgba(32, 24, 35, .92);
+  --cp-panel-strong: rgba(32, 24, 35, .98);
+  --cp-highlight: rgba(224, 191, 143, .13);
+  --cp-candle: rgba(153, 63, 87, .14);
+}
+html[data-theme="light"] {
+  --cp-bg: #eae0d1;
+  --cp-bg-elevated: #f6eddf;
+  --cp-surface: #fcf4e7;
+  --cp-surface-soft: #e9dbc7;
+  --cp-border: #8e7368;
+  --cp-border-strong: #755b52;
+  --cp-hairline: rgba(108, 64, 78, .25);
+  --cp-text: #392333;
+  --cp-text-muted: #695361;
+  --cp-text-soft: #695361;
+  --cp-accent: #734b20;
+  --cp-accent-hover: #57360d;
+  --cp-accent-soft: rgba(115, 75, 32, .10);
+  --cp-accent-fg: #fff7e9;
+  --cp-brass: #895e28;
+  --cp-brass-wash: rgba(137, 94, 40, .10);
+  --cp-panel-strong: rgba(246, 237, 223, .98);
+  --cp-highlight: rgba(115, 75, 32, .10);
+}
+body {
+  background:
+    radial-gradient(ellipse at 50% 0, var(--cp-candle), transparent 60%),
+    var(--cp-bg);
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: auto 0 0;
+  height: 260px;
+  background: url("./cabinet-rooftops.svg") bottom center / cover no-repeat;
+  pointer-events: none;
+  z-index: -1;
+}
+body {isolation: isolate}
+.app-header {
+  border-bottom: 1px solid var(--cp-brass);
+  box-shadow: 0 3px 0 var(--cp-bg), 0 4px 0 var(--cp-hairline);
+}
+.brand {color: var(--cp-accent)}
+.brand-seal {
+  border: 1px solid var(--cp-brass);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--cp-bg), 0 0 0 4px var(--cp-hairline);
+}
+.table-bar-title h1 {text-shadow: 0 2px 0 var(--cp-bg)}
+button, input, select, textarea {border-radius: 8px}
+button {
+  background-image: linear-gradient(180deg, var(--cp-sheen), transparent);
+  transition: border-color .15s, background-color .15s, box-shadow .15s;
+}
+button:hover {box-shadow: 0 0 0 1px var(--cp-hairline)}
+.primary {
+  box-shadow: inset 0 0 0 2px var(--cp-accent), inset 0 0 0 3px var(--cp-accent-fg);
+}
+.shape-switch, .mode-switch {border-color: var(--cp-brass)}
+.brush-btn {
+  border: 1px solid var(--cp-border);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 3px var(--cp-surface), inset 0 0 0 4px var(--cp-hairline);
+}
+.brush-btn b {font-family: Georgia, serif; font-size: 1.15rem}
+.card, .first-steps, .plan-connections, .table-card, .custom-box {
+  border: 1px solid var(--cp-border);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 4px var(--cp-surface), inset 0 0 0 5px var(--cp-hairline);
+}
+.card, .plan-connections {
+  background-image: linear-gradient(135deg, var(--cp-brass-wash), transparent 65%);
+}
+.seat {
+  border-color: var(--cp-border);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--cp-bg), 3px 3px 0 var(--cp-hairline);
+}
+.seat.mine {border-color: var(--cp-brass)}
+.seat-camp {border-right-color: var(--cp-hairline)}
+.seat-name {font-size: 1.45rem}
+.seat-num {font-family: Georgia, serif; font-size: 1.05rem}
+.seat-fx {font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 1.1rem}
+.seat-marks {gap: 6px}
+.plan-wrap {
+  position: relative;
+  background: radial-gradient(circle at center, var(--cp-brass-wash), transparent 72%);
+}
+/* Gravure derriere le SVG existant : les jetons, icones, liens et etiquettes
+   restent ceux de l'application, sans interception des gestes. */
+.plan-wrap::before {
+  content: none;
+  position: absolute;
+  width: min(100%, 560px, calc(100vh - 340px));
+  aspect-ratio: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background:
+    repeating-conic-gradient(from 0deg, var(--cp-brass) 0deg .3deg, transparent .3deg 6deg);
+  border-radius: 50%;
+  -webkit-mask: radial-gradient(circle, transparent 0 64%, #000 64.5% 67%, transparent 67.5% 100%);
+  mask: radial-gradient(circle, transparent 0 64%, #000 64.5% 67%, transparent 67.5% 100%);
+  opacity: .6;
+}
+.plan-svg {position: relative}
+.plan-ring {
+  stroke: var(--cp-brass);
+  stroke-dasharray: none;
+  stroke-width: 1;
+  opacity: .35;
+}
+.plan-disc {
+  stroke-width: 2;
+  filter: drop-shadow(0 3px 3px var(--cp-bg));
+  transition: fill .2s, stroke .2s;
+}
+.plan-seat-num {font-family: Georgia, serif; font-weight: 400}
+.plan-seat:hover .plan-disc {stroke: var(--cp-accent); stroke-width: 3}
+.plan-selected .plan-disc {stroke: var(--cp-accent); stroke-width: 4}
+.plan-camp-shape {stroke-width: 2}
+.plan-hub-disc {stroke-width: 1.5; stroke-dasharray: none}
+.plan-hub-day {font-family: Georgia, serif}
+.plan-chord {transition: opacity .2s}
+.plan-fx {font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif}
+.plan-connections h3 {color: var(--cp-accent)}
+.bottom-nav {
+  border-top: 1px solid var(--cp-brass);
+  box-shadow: 0 -3px 0 var(--cp-bg), 0 -4px 0 var(--cp-hairline);
+}
+.bottom-nav button.active {
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--cp-hairline);
+}
+dialog, dialog.sheet {border-color: var(--cp-brass)}
+.dialog-head {border-bottom-color: var(--cp-brass)}
+.dialog-head h2 {color: var(--cp-accent)}
+.sheet-sec h3, .role-group, .glossary-title {color: var(--cp-accent)}
+.role-pill, .effect, .role-opt, .role-check {
+  border-radius: 8px;
+  border-color: var(--cp-border);
+}
+.sheet-note, .sheet-link {border-left-color: var(--cp-brass)}
+.hero-shot {border: 2px solid var(--cp-brass)}
+.timeline-item::before {border: 1px solid var(--cp-accent); background: var(--cp-surface)}
+.cabinet-engraving, .cabinet-medallion, .cabinet-hub-engraving {pointer-events: none}
+.cabinet-ring {fill: none; stroke: var(--cp-brass); stroke-width: .7; opacity: .9}
+.cabinet-ring-1 {stroke-width: .35; opacity: .65}
+.cabinet-ring-2 {stroke-width: 2.5; opacity: .22}
+.cabinet-ring-3 {stroke-width: .4; opacity: .7}
+.cabinet-tick, .cabinet-scroll {fill: none; stroke: var(--cp-brass); stroke-width: .55; opacity: .8}
+.cabinet-medallion-rim {fill: var(--cp-bg); stroke: var(--cp-brass); stroke-width: .6}
+.cabinet-medallion-line {fill: none; stroke: var(--cp-brass); stroke-width: .4; opacity: .6}
+.cabinet-hand-tip {fill: var(--cp-accent); stroke: var(--cp-bg); stroke-width: .6}
+.plan-disc {fill: var(--cp-surface)}
+.plan-camp-good .plan-disc {fill: var(--camp-good-soft)}
+.plan-camp-evil .plan-disc {fill: var(--camp-evil-soft)}
+.plan-camp-doubt .plan-disc {fill: var(--camp-doubt-soft)}
+.plan-dead .plan-disc {fill: var(--cp-surface-soft)}
+.plan-chord {animation: cabinet-thread .35s ease-out both}
+.plan-chord-dim {animation: none}
+@keyframes cabinet-thread {from {opacity: 0} to {opacity: .95}}
+dialog.sheet[open] {animation: cabinet-sheet .18s ease-out}
+@keyframes cabinet-sheet {from {opacity: .5; transform: translateY(12px)} to {opacity: 1; transform: none}}
+.role-pill, .note-composer, .sheet-links, .sheet-notes {position: relative}
+.table-aside .card {
+  box-shadow: 3px 3px 0 var(--cp-bg), 4px 4px 0 var(--cp-brass),
+    inset 0 0 0 4px var(--cp-surface), inset 0 0 0 5px var(--cp-hairline);
+}
+/* Composition de la reference : commandes intactes en haut, pinceaux a gauche,
+   grand cadran au centre, carnet d'echanges a droite. */
+html[data-theme="dark"] {
+  --cp-bg: #151119;
+  --cp-bg-elevated: #1e1722;
+  --cp-surface: #251c29;
+  --cp-surface-soft: #302333;
+  --cp-brass: #b59a66;
+  --cp-accent: #d9b77a;
+}
+.app-header {height: 80px; padding-inline: max(24px, calc((100vw - 1440px)/2))}
+.brand {font-size: 1.8rem}
+.header-actions {gap: 8px}
+.header-actions .status {display: inline}
+.header-actions button {background-color: var(--cp-bg-elevated)}
+.plan-svg {max-width: 620px}
+.table-aside .card {padding: 24px}
+.plan-wrap {margin-inline: 0}
+.plan-disc {filter: drop-shadow(0 2px 2px var(--cp-bg))}
+.plan-seat-name {font-family: var(--font-display); font-weight: 700}
+.plan-seat-role {font-family: var(--font-body); font-weight: 400}
+.cabinet-ring-2 {stroke-width: 4; opacity: .24}
+@media (min-width: 1100px) {
+  main {max-width: 1440px; padding: 28px 28px 40px}
+  main.cabinet-table {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto 1fr;
+    gap: 12px 30px;
+    align-items: start;
+  }
+  .cabinet-table > .table-bar {grid-column: 1 / -1; grid-row: 1; margin-bottom: 8px}
+  .cabinet-table .table-bar-title h1 {font-size: 2.15rem}
+  .cabinet-table > .table-controls {grid-column: 2; grid-row: 2; margin: 0}
+  .cabinet-table > .brush {
+    grid-column: 1; grid-row: 3; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px; padding-top: 14px;
+  }
+  .cabinet-table > .brush-hint {grid-column: 1; grid-row: 4; margin: 0; font-size: .8125rem}
+  .cabinet-table > .first-steps {grid-column: 1; grid-row: 5; padding: 12px; margin: 0}
+  .cabinet-table > .first-steps .first-steps-head {flex-wrap: wrap}
+  .cabinet-table > .first-steps .try-list {padding-left: 14px}
+  .cabinet-table > .table-layout {
+    grid-column: 2; grid-row: 3 / 6;
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 26px;
+  }
+  .cabinet-table > .card {grid-column: 2}
+  .cabinet-table .table-aside {border-left: 1px solid var(--cp-hairline); padding-left: 20px}
+  .cabinet-table .plan-wrap {margin: 0 auto; max-width: 620px}
+  .cabinet-table .brush-btn {min-height: 64px}
+  .cabinet-table .plan-seat-name {font-size: 11px!important}
+  .cabinet-table .plan-seat-role {font-size: 8px!important}
+  .cabinet-table .plan-seat-num {font-size: 16px!important}
+  .cabinet-table .plan-wrap {padding-bottom: 30px}
+}
+@media (max-width: 760px) {
+  .app-header {height: 64px; padding-inline: 14px}
+  .brand {font-size: 1.4rem}
+  .header-actions {gap: 3px}
+  .header-actions .status {display: none}
+  .plan-svg {max-width: 560px}
+  .table-controls {flex-wrap: wrap; gap: 8px}
+  .table-controls .shape-switch {flex: 1; display: flex}
+  .table-controls .shape-switch button {flex: 1; min-width: 0; min-height: 44px; padding-inline: 12px}
+  .table-controls .quick-actions {margin-left: auto}
+  .plan-svg {min-width: 0}
+  .plan-wrap {overflow: visible}
+}
+@media (max-width: 760px) {
+  .plan-wrap::before {width: min(100%, 560px, calc(100vh - 340px))}
+  .seat-name {font-size: 1.4rem}
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {transition: none!important; animation: none!important}
+}

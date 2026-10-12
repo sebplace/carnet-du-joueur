@@ -10,6 +10,10 @@ Carnet du Joueur est un carnet privé hors ligne pour noter, organiser et recoup
 
 ## Ce que fait l’application
 
+L'apparence « Le Cabinet des murmures » conserve les fonctions du carnet.
+Les volets **Plan, Liste et Notes** donnent accès à la table et au Journal existant.
+Sur smartphone, les commandes passent sur deux lignes si l'écran est étroit.
+
 - crée une table de 5 à 20 joueurs dans l’ordre des sièges, avec un script du catalogue, un script importé ou **un scénario personnalisé dont tu coches les rôles** ;
 - se pilote sur le **plan** (le cercle) et la **liste** : un tap sur la forme colorée d’un joueur lui donne un camp (neutre, bleu, rouge, orange), un pinceau colorie plusieurs joueurs d’un coup ;
 - une **fiche par joueur** réunit camp, rôle supposé, effets (empoisonné, ivre, protégé…), notes modifiables et liens qui dépendent du rôle (voisins de l’Empathe, joueurs désignés…), dessinés sur le plan ;

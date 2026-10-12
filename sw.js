@@ -1,5 +1,6 @@
-const CACHE='botc-player-shell-v21';
+const CACHE='botc-player-shell-v22';
 const ASSETS=['./','./index.html','./style.css','./icon.svg','./logo.svg','./icon-192.png','./icon-512.png','./icon-maskable.png','./assets/welcome-table.png','./assets/fonts/cormorant-garamond-latin-600-normal.woff2','./assets/fonts/cormorant-garamond-latin-700-normal.woff2','./manifest.webmanifest','./guide.html','./404.html','./data/catalogue.json','./js/state.js','./js/catalogue.js','./js/app.js','./js/inference.js','./js/inference-worker.js','./js/evidence.js','./js/probability.js','./js/roster.js','./js/investigation.js','./js/rules-coverage.js','./js/encode.js','./js/encode-ui.js','./js/script-builder.js','./js/mynotes.js','./js/print.js','./js/plan.js','./js/history.js','./js/estimator-client.js'];
+ASSETS.push('./proposition-victorienne.css','./cabinet-decoration.js','./cabinet-rooftops.svg');
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
 });
@@ -26,7 +27,6 @@ self.addEventListener('fetch',event=>{
     }
   }));
 });
-
 
 
 

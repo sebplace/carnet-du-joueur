@@ -2,6 +2,16 @@
 
 All notable changes to Carnet du Joueur are recorded here.
 
+## 3.1.0
+
+- Apparence victorienne gothique « Le Cabinet des murmures » : cadran grave,
+  volutes, medaillons en laiton, silhouettes de toits, palette aubergine et ivoire.
+- Toutes les fonctions existantes restent presentes, avec les icones d'effets
+  et les commandes superieures. Aucun changement de format des carnets.
+- Volet Notes a cote de Plan et Liste, relie au Journal existant sans duplication.
+- Sur smartphone, commandes tactiles et disposition verticale conservees.
+- Animations des liens, des fiches et du repere d'horloge ; mouvements reduits respectes.
+
 ## 3.0.1
 
 - Au-dela de 14 joueurs, le plan ecrit les initiales pres des sieges au lieu de ne
@@ -496,5 +506,3 @@ categorie, jamais leur substance.
 - Added local game setup, player notes, claims, events, clues and hypotheses.
 - Added bounded strict hypothesis solver for initial role assignments.
 - Added offline/PWA support and a fictional demo game.
-
-
